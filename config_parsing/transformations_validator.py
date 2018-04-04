@@ -14,8 +14,7 @@
 
 import re
 
-from pyspark.sql.types import *
-
+from pyspark.sql.types import StructField, StructType, FloatType, LongType, StringType
 from errors import errors
 from .transformations_parser import FieldTransformation
 
@@ -24,32 +23,45 @@ class TransformationsValidator:
     def __init__(self, transformation_operations, data_structure_pyspark):
         self.current_fields = data_structure_pyspark
         self.transformation_operations = transformation_operations
+        self.stringQuote = "'"
 
     def __get_field(self, field):
         try:
             return self.current_fields[field]
-        except KeyError as ex:
-            raise errors.FieldNotExists("Field with name '{}' does not exists".format(field))
+        except KeyError:
+            raise errors.FieldNotExists(
+                "Field with name '{}' does not exists".format(field))
 
     def _validate_syntax_tree(self, tree):
         if isinstance(tree, str):
-            f = tree.strip()
-            if re.search('^(\d+)$', f) is not None:  # it's long number
-                actual_type = LongType()
-            elif re.search('^(\d+\.\d+)$', f) is not None:  # it's float number
-                actual_type = FloatType()
+            _tree = tree.strip()
+            # case "'foobar'" - str literal
+            # case  "foobar"  - alias
+            if _tree.startswith(self.stringQuote) and \
+                _tree.endswith(self.stringQuote):
+                actual_type = StringType()
             else:  # it's field
-                renamed_field = self.__get_field(f)
+                renamed_field = self.__get_field(_tree)
                 actual_type = renamed_field.dataType
             return actual_type
+        elif isinstance(tree, float):
+            actual_type = FloatType()
+            return actual_type
+        # Python3 primitive `int` corresponds to `long`
+        elif isinstance(tree, int):
+            actual_type = LongType()
+            return actual_type
 
-        operation = self.transformation_operations.operations_dict.get(tree.operation, None)
+        operation = self.transformation_operations.operations_dict.get(
+            tree.operation, None)
 
         if operation is None:
-            raise errors.OperationNotSupportedError("Operation '{}' is not supported.".format(tree.operation))
+            raise errors.OperationNotSupportedError(
+                "Operation '{}' is not supported.".format(tree.operation))
 
         if operation.op_count != len(tree.children):
-            raise errors.IncorrectArgumentsAmountForOperationError("Operation '{}' expects {} arguments.".format(operation, operation.op_count))
+            raise errors.IncorrectArgumentsAmountForOperationError(
+                "Operation '{}' expects {} arguments.".format(operation, operation.op_count))
 
         return operation.result_type(list(map(lambda ch: self._validate_syntax_tree(ch), tree.children)))
 
@@ -57,12 +69,15 @@ class TransformationsValidator:
         new_fields = []
         for transformation in transformations:
             if isinstance(transformation, FieldTransformation):  # it's transformed name
-                if isinstance(transformation.operation, str):  # it's rename
-                    field = self.__get_field(transformation.operation)
-                    new_fields.append(StructField(transformation.field_name, field.dataType))
+                if isinstance(transformation.body, str):  # it's rename
+                    field = self.__get_field(transformation.body)
+                    new_fields.append(StructField(
+                        transformation.name, field.dataType))
                 else:  # is Syntaxtree
-                    field_type = self._validate_syntax_tree(transformation.operation)
-                    new_fields.append(StructField(transformation.field_name, field_type))
+                    field_type = self._validate_syntax_tree(
+                        transformation.body)
+                    new_fields.append(StructField(
+                        transformation.name, field_type))
             else:  # no transforms
                 new_fields.append(self.__get_field(transformation))
         return StructType(new_fields)

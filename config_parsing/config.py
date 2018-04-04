@@ -26,8 +26,10 @@ class Config:
             data_structure = json.load(cfg)
 
         self.data_structure = data_structure
-        data_structure_list = list(map(lambda x: (x, data_structure[x]), data_structure.keys()))
-        data_structure_sorted = sorted(data_structure_list, key=lambda x: x[1]["index"])
+        data_structure_list = list(
+            map(lambda x: (x, data_structure[x]), data_structure.keys()))
+        data_structure_sorted = sorted(
+            data_structure_list, key=lambda x: x[1]["index"])
         self.data_structure_pyspark = types.StructType(
             list(map(lambda x: types.StructField(x[0], getattr(types, x[1]["type"])()),
                      data_structure_sorted)))

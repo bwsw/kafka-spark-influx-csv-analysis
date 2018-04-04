@@ -1,0 +1,34 @@
+{
+    "input": {
+        "input_type": "kafka",
+        "data_structure": "config_data_structure.json",
+        "options": {
+            "server": "176.120.25.195",
+            "port": 29092,
+            "topic": "testtag01",
+            "consumer_group": "sflow-consumer",
+            "batchDuration": 10,
+            "sep": ","
+        }
+    },
+    "output": {
+        "method": "stdout",
+        "options": {}
+    },
+    "processing": {
+        "transformation": [
+            "traffic: 13"
+        ],
+        "aggregations": {
+            "operation_type": "reduce",
+            "rule": [
+                "min(traffic)"
+            ]
+        }
+    },
+    "databases": {
+        "country": "./GeoLite2/GeoLite2-Country.mmdb",
+        "city": "./GeoLite2/GeoLite2-City.mmdb",
+        "asn": "./GeoLite2/GeoLite2-ASN.mmdb"
+    }
+}

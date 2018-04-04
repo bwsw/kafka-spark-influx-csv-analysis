@@ -20,11 +20,13 @@ from unittest import TestCase
 
 from pyspark.sql import SparkSession
 
-from config_parsing.transformations_parser import FieldTransformation, SyntaxTree
+from config_parsing.transformations_parser import FieldTransformation, SyntaxTree, TransformationsParser
+from config_parsing.transformations_validator import TransformationsValidator
 from operations.transformation_operations import TransformationOperations
 from processor.transformation_creator import TransformationCreator
 
-DATA_PATH = os.path.join(os.path.dirname(__file__), os.path.join("..", "data", "test.csv"))
+DATA_PATH = os.path.join(os.path.dirname(
+    __file__), os.path.join("..", "data", "test.csv"))
 
 
 class TransformationCreatorTestCase(TestCase):
@@ -34,8 +36,10 @@ class TransformationCreatorTestCase(TestCase):
             data_structure = json.load(cfg)
 
         self.data_structure = data_structure
-        data_structure_list = list(map(lambda x: (x, data_structure[x]), data_structure.keys()))
-        data_structure_sorted = sorted(data_structure_list, key=lambda x: x[1]["index"])
+        data_structure_list = list(
+            map(lambda x: (x, data_structure[x]), data_structure.keys()))
+        data_structure_sorted = sorted(
+            data_structure_list, key=lambda x: x[1]["index"])
         self.data_structure_pyspark = types_spark.StructType(
             list(map(lambda x: types_spark.StructField(x[0], getattr(types_spark, x[1]["type"])()),
                      data_structure_sorted)))
@@ -48,11 +52,13 @@ class TransformationCreatorTestCase(TestCase):
         parsed_transformations = ["src_ip", FieldTransformation("destination_ip", "dst_ip"),
                                   FieldTransformation("traffic", mult_syntax_tree)]
 
-        creator = TransformationCreator(self.data_structure, parsed_transformations, TransformationOperations())
+        creator = TransformationCreator(
+            self.data_structure, parsed_transformations, TransformationOperations())
 
         transformation = creator.build_lambda()
 
-        self.assertIsInstance(transformation, types.LambdaType, "Transformation type should be lambda")
+        self.assertIsInstance(transformation, types.LambdaType,
+                              "Transformation type should be lambda")
 
         spark = SparkSession.builder.getOrCreate()
         file = spark.read.csv(DATA_PATH, self.data_structure_pyspark)
@@ -86,7 +92,8 @@ class TransformationCreatorTestCase(TestCase):
 
         transformation = creator.build_lambda()
 
-        self.assertIsInstance(transformation, types.LambdaType, "Transformation type should be lambda")
+        self.assertIsInstance(transformation, types.LambdaType,
+                              "Transformation type should be lambda")
 
         spark = SparkSession.builder.getOrCreate()
         file = spark.read.csv(DATA_PATH, self.data_structure_pyspark)
@@ -100,6 +107,315 @@ class TransformationCreatorTestCase(TestCase):
                                       ("91.226.13.80", "5.136.78.36", 7731200),
                                       ("192.168.30.2", "192.168.30.1", 947200),
                                       ("192.168.30.2", "192.168.30.1", 947200)],
+                             "List of tuples should be equal")
+
+        spark.stop()
+
+    def test_build_lambda_with_literals(self):
+        st = SyntaxTree()
+        st.operation = "concat"
+        st.children = ["'6 - '", "packet_size"]  # packet_size [74, 68]
+
+        parsed_transformations = [
+            FieldTransformation("ephemer", st)]
+        creator = TransformationCreator(self.data_structure, parsed_transformations,
+                                        TransformationOperations())
+        transformation = creator.build_lambda()
+
+        self.assertIsInstance(transformation, types.LambdaType,
+                              "Transformation type should be lambda")
+
+        spark = SparkSession.builder.getOrCreate()
+        file = spark.read.csv(DATA_PATH, self.data_structure_pyspark)
+
+        result = file.rdd.map(transformation)
+
+        result = result.collect()
+        print(result)
+        self.assertListEqual(
+            result,
+            [
+                ("6 - 74",),
+                ("6 - 68",),
+                ("6 - 1510",),
+                ("6 - 185",),
+                ("6 - 185",)], "List of tuples should be equal")
+
+    def test_build_lambda_with_nested_literals(self):
+        st = SyntaxTree()
+        st.operation = "concat"
+        # should cast int to str and concat
+        st.children = ["6", "packet_size"]  # packet_size [74, 68]
+
+        st2 = SyntaxTree()
+        st2.operation = "concat"
+        st2.children = ["2E+2", st]
+
+        parsed_transformations = [
+            FieldTransformation("nested", st2)]
+        creator = TransformationCreator(self.data_structure, parsed_transformations,
+                                        TransformationOperations())
+        transformation = creator.build_lambda()
+
+        self.assertIsInstance(transformation, types.LambdaType,
+                              "Transformation type should be lambda")
+
+        spark = SparkSession.builder.getOrCreate()
+        file = spark.read.csv(DATA_PATH, self.data_structure_pyspark)
+
+        result = file.rdd.map(transformation)
+
+        result = result.collect()
+        print(result)
+        self.assertListEqual(
+            result,
+            [
+                ('200.0674',),
+                ('200.0668',),
+                ('200.061510',),
+                ('200.06185',),
+                ('200.06185',)], "List of tuples should be equal")
+        spark.stop()
+
+    def test_build_lambda_concat_with_nested_mul(self):
+        mult_syntax_tree = SyntaxTree()
+        mult_syntax_tree.operation = "mul"
+        mult_syntax_tree.children = ["6", "packet_size"]
+
+        mult_syntax_tree_root = SyntaxTree()
+        mult_syntax_tree_root.operation = "concat"
+        mult_syntax_tree_root.children = [
+            mult_syntax_tree, "' -- xe \' 2/3 mul(3,3) FooBar'"]
+
+        parsed_transformations = [
+            FieldTransformation("traffic", mult_syntax_tree_root)]
+
+        creator = TransformationCreator(self.data_structure, parsed_transformations,
+                                        TransformationOperations())
+
+        transformation = creator.build_lambda()
+
+        self.assertIsInstance(transformation, types.LambdaType,
+                              "Transformation type should be lambda")
+
+        spark = SparkSession.builder.getOrCreate()
+        file = spark.read.csv(DATA_PATH, self.data_structure_pyspark)
+
+        result = file.rdd.map(transformation)
+
+        result = result.collect()
+        self.assertListEqual(
+            result, [
+                ('444 -- xe \' 2/3 mul(3,3) FooBar',),
+                ('408 -- xe \' 2/3 mul(3,3) FooBar',),
+                ('9060 -- xe \' 2/3 mul(3,3) FooBar',),
+                ('1110 -- xe \' 2/3 mul(3,3) FooBar',),
+                ('1110 -- xe \' 2/3 mul(3,3) FooBar',)],
+                             "List of tuples should be equal")
+
+        spark.stop()
+
+    def test_build_lambda_truncate(self):
+        st = SyntaxTree()
+        st.operation = "truncate"
+        st.children = ["'test'", "2"]
+
+       
+        parsed_transformations = [
+            FieldTransformation("cut_upto_2_symbols", st)]
+
+        creator = TransformationCreator(self.data_structure, parsed_transformations,
+                                        TransformationOperations())
+
+        transformation = creator.build_lambda()
+
+        self.assertIsInstance(transformation, types.LambdaType,
+                              "Transformation type should be lambda")
+
+        spark = SparkSession.builder.getOrCreate()
+        file = spark.read.csv(DATA_PATH, self.data_structure_pyspark)
+
+        result = file.rdd.map(transformation)
+
+        result = result.collect()
+        self.assertListEqual(
+            result, [('te',), ('te',), ('te',), ('te',), ('te',)],
+                             "List of tuples should be equal")
+
+        spark.stop()
+
+    def test_build_lambda_add_scientific(self):
+        st = SyntaxTree()
+        st.operation = "add"
+        st.children = ["1.2E+5", "1.0"]
+
+       
+        parsed_transformations = [
+            FieldTransformation("sum", st)]
+
+        creator = TransformationCreator(self.data_structure, parsed_transformations,
+                                        TransformationOperations())
+
+        transformation = creator.build_lambda()
+
+        self.assertIsInstance(transformation, types.LambdaType,
+                              "Transformation type should be lambda")
+
+        spark = SparkSession.builder.getOrCreate()
+        file = spark.read.csv(DATA_PATH, self.data_structure_pyspark)
+
+        result = file.rdd.map(transformation)
+
+        result = result.collect()
+        self.assertListEqual(
+            result, [(120001.0,), (120001.0,), (120001.0,), (120001.0,), (120001.0,)],
+                             "List of tuples should be equal")
+
+        spark.stop()
+
+    def test_build_lambda_numbers(self):
+        st = SyntaxTree()
+        st.operation = "_"
+        st.children = ["13"]
+
+        parsed_transformations = [
+            FieldTransformation("a", st)]
+
+        creator = TransformationCreator(self.data_structure, parsed_transformations,
+                                        TransformationOperations())
+
+        transformation = creator.build_lambda()
+
+        self.assertIsInstance(transformation, types.LambdaType,
+                              "Transformation type should be lambda")
+
+        spark = SparkSession.builder.getOrCreate()
+        file = spark.read.csv(DATA_PATH, self.data_structure_pyspark)
+
+        result = file.rdd.map(transformation)
+
+        result = result.collect()
+        self.assertListEqual(
+            result, [(13,), (13,), (13,), (13,), (13,)],
+                             "List of tuples should be equal")
+
+        spark.stop()
+
+    def test_build_lambda_processor_numbers(self):
+        parser = TransformationsParser(["dst_ip: 13"])
+        parser.run()
+
+        operations = TransformationOperations()
+        
+        transformations_validator = TransformationsValidator(
+            operations, self.data_structure)
+        #_ = transformations_validator.validate(parser.expanded_transformation)
+        creator = TransformationCreator(self.data_structure, parser.expanded_transformation,
+                                        TransformationOperations())
+
+        transformation = creator.build_lambda()
+
+        self.assertIsInstance(transformation, types.LambdaType,
+                              "Transformation type should be lambda")
+
+        spark = SparkSession.builder.getOrCreate()
+        file = spark.read.csv(DATA_PATH, self.data_structure_pyspark)
+
+        result = file.rdd.map(transformation)
+
+        result = result.collect()
+       
+        self.assertListEqual(
+            result, [(13,), (13,), (13,), (13,), (13,)],
+                             "List of tuples should be equal")
+
+        spark.stop()
+    def test_build_lambda_processor_int_unsigned(self):
+        parser = TransformationsParser(["dst_ip: +13"])
+        parser.run()
+
+        operations = TransformationOperations()
+        
+        transformations_validator = TransformationsValidator(
+            operations, self.data_structure)
+        _ = transformations_validator.validate(parser.expanded_transformation)
+        creator = TransformationCreator(self.data_structure, parser.expanded_transformation,
+                                        TransformationOperations())
+
+        transformation = creator.build_lambda()
+
+        self.assertIsInstance(transformation, types.LambdaType,
+                              "Transformation type should be lambda")
+
+        spark = SparkSession.builder.getOrCreate()
+        file = spark.read.csv(DATA_PATH, self.data_structure_pyspark)
+
+        result = file.rdd.map(transformation)
+
+        result = result.collect()
+       
+        self.assertListEqual(
+            result, [(13,), (13,), (13,), (13,), (13,)],
+                             "List of tuples should be equal")
+
+        spark.stop()
+
+    def test_build_lambda_processor_int_neg(self):
+        parser = TransformationsParser(["dst_ip: -13"])
+        parser.run()
+
+        operations = TransformationOperations()
+        
+        transformations_validator = TransformationsValidator(
+            operations, self.data_structure)
+        #_ = transformations_validator.validate(parser.expanded_transformation)
+        creator = TransformationCreator(self.data_structure, parser.expanded_transformation,
+                                        TransformationOperations())
+
+        transformation = creator.build_lambda()
+
+        self.assertIsInstance(transformation, types.LambdaType,
+                              "Transformation type should be lambda")
+
+        spark = SparkSession.builder.getOrCreate()
+        file = spark.read.csv(DATA_PATH, self.data_structure_pyspark)
+
+        result = file.rdd.map(transformation)
+
+        result = result.collect()
+       
+        self.assertListEqual(
+            result, [(-13,), (-13,), (-13,), (-13,), (-13,)],
+                             "List of tuples should be equal")
+
+        spark.stop()
+
+    def test_build_lambda_processor_float_neg(self):
+        parser = TransformationsParser(["dst_ip: -13.5"])
+        parser.run()
+
+        operations = TransformationOperations()
+        
+        transformations_validator = TransformationsValidator(
+            operations, self.data_structure)
+        #_ = transformations_validator.validate(parser.expanded_transformation)
+        creator = TransformationCreator(self.data_structure, parser.expanded_transformation,
+                                        TransformationOperations())
+
+        transformation = creator.build_lambda()
+
+        self.assertIsInstance(transformation, types.LambdaType,
+                              "Transformation type should be lambda")
+
+        spark = SparkSession.builder.getOrCreate()
+        file = spark.read.csv(DATA_PATH, self.data_structure_pyspark)
+
+        result = file.rdd.map(transformation)
+
+        result = result.collect()
+       
+        self.assertListEqual(
+            result, [(-13.5,), (-13.5,), (-13.5,), (-13.5,), (-13.5,)],
                              "List of tuples should be equal")
 
         spark.stop()
