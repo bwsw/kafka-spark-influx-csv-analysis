@@ -54,8 +54,8 @@ class MapOperation(object):
             raise errors.IncorrectArgumentTypeForOperationError(e)
         rt = avail_types[max(indexes)]
         return rt
-
-
+        
+        
 class UnarySameTypeOperation(MapOperation):
     def __init__(self, name, func):
         super().__init__(name, 1, func)
@@ -81,13 +81,23 @@ class MathDiv(MapOperation):
     def __init__(self):
         super().__init__("mathdiv", 2, lambda x, y: x / float(y))
 
-    def result_type(self, arg_types = []):
+    def result_type(self, _ = []):
         return DoubleType()
 
+class EmptyOperation(UnarySameTypeOperation):
+    def __init__(self):
+        super().__init__("_", lambda x: x.strip("'") if isinstance(x, str) else x)
+    
+    def result_type(self, arg_types = []):
+        return arg_types[0]
 
 class Boolean(MapOperation):
-    def result_type(self, arg_types = []):
+    def result_type(self, _ = []):
         return BooleanType()
+
+class String(MapOperation):
+    def result_type(self, _ = []):
+        return StringType()
 
 
 class Cast(MapOperation):
@@ -95,13 +105,13 @@ class Cast(MapOperation):
         super().__init__(name, 1, function)
         self.ret_type = new_type
 
-    def result_type(self, arg_types = []):
+    def result_type(self, _ = []):
         return self.ret_type
 
 
 class Truncate(MapOperation):
     def __init__(self):
-        super().__init__("truncate", 2, lambda x, length: x[:length] )
+        super().__init__("truncate", 2, lambda x, length: x.strip("'")[:length])
 
     def result_type(self, arg_types = []):
         if len(arg_types) != 2:
@@ -130,6 +140,7 @@ class TransformationOperations:
         self.add(GreatTypeCastedOperation("odd", 2, lambda x, y: x % y))
         self.add(GreatTypeCastedOperation("pydiv", 2, lambda x, y: x / y))
         self.add(MathDiv())
+        self.add(EmptyOperation())
 
         self.add(Boolean("lt", 2, lambda x,y: x < y))
         self.add(Boolean("le", 2, lambda x,y: x <= y))
@@ -139,6 +150,8 @@ class TransformationOperations:
         self.add(Boolean("neq", 2, lambda x,y: x != y))
         self.add(Boolean("or", 2, lambda x,y: x or y))
         self.add(Boolean("and", 2, lambda x,y: x and y))
+        self.add(String("concat", 2, lambda x, y: "".join([str(i) if not isinstance(i, str) else i.strip("'") for i in [x,y]])
+ ))
 
         self.add(Cast("long",LongType(), lambda x: int(x)))
         self.add(Cast("int", IntegerType(), lambda x: int(x)))
