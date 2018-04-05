@@ -14,7 +14,7 @@
 
 import re
 
-from pyspark.sql.types import StructField, StructType, FloatType, LongType, StringType
+from pyspark.sql.types import StructField, StructType, FloatType, LongType, StringType, BooleanType
 from errors import errors
 from .transformations_parser import FieldTransformation
 
@@ -45,16 +45,16 @@ class TransformationsValidator:
                 actual_type = renamed_field.dataType
             return actual_type
         elif isinstance(tree, float):
-            actual_type = FloatType()
-            return actual_type
+            return FloatType()
+        elif isinstance(tree, bool):
+            return BooleanType()
         # Python3 primitive `int` corresponds to `long`
         elif isinstance(tree, int):
-            actual_type = LongType()
-            return actual_type
+            return LongType()
 
         operation = self.transformation_operations.operations_dict.get(
             tree.operation, None)
-
+        
         if operation is None:
             raise errors.OperationNotSupportedError(
                 "Operation '{}' is not supported.".format(tree.operation))
@@ -68,11 +68,14 @@ class TransformationsValidator:
     def validate(self, transformations):
         new_fields = []
         for transformation in transformations:
-            if isinstance(transformation, FieldTransformation):  # it's transformed name
-                if isinstance(transformation.body, str):  # it's rename
-                    field = self.__get_field(transformation.body)
-                    new_fields.append(StructField(
-                        transformation.name, field.dataType))
+            if isinstance(transformation, FieldTransformation):
+                # string or aliasing
+                if isinstance(transformation.body, str):
+                    if not transformation.body.startswith(self.stringQuote) and \
+                            not transformation.body.endswith(self.stringQuote):
+                        field = self.__get_field(transformation.body)
+                        new_fields.append(StructField(
+                            transformation.name, field.dataType))
                 else:  # is Syntaxtree
                     field_type = self._validate_syntax_tree(
                         transformation.body)

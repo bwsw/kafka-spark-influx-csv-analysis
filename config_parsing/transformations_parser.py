@@ -27,6 +27,7 @@ class SyntaxTree:
     def __init__(self):
         self.operation = None
         self.children = []  # list syntax trees or strings
+        self.amIParent = False
 
     def append_child(self, child):
         self.children += [child]
@@ -40,7 +41,6 @@ class SyntaxTree:
             else:
                 print(" " * (shift + 1) * 2 + "Leaf node: ", ch)
 
-
 class TransformationsParser:
     def __init__(self, transformations):
         self.transformations = transformations
@@ -49,9 +49,10 @@ class TransformationsParser:
         #
         self.expanded_transformation = []  # string or FieldTransformation
 
-    def _parse(self, args):
-        result = re.search(r'(\w+)\((.*)\)', args)
+    def _parse(self, args, parent):
+        result = re.search(r'^(\w+)\((.*)\)$', args)
         tree = SyntaxTree()
+        tree.amIParent = parent
         # operation
         if result is not None:
             tree.operation, arguments = result.groups()
@@ -69,7 +70,7 @@ class TransformationsParser:
                             end_index = i
 
                             child = self._parse(
-                                arguments[start_index:end_index + 1])
+                                arguments[start_index:end_index + 1], False)
                             tree.append_child(child)
 
                             start_index = index = i
@@ -84,23 +85,29 @@ class TransformationsParser:
 
                 elif arguments[index] == ",":
                     end_index = index
-                    child = self._parse(arguments[start_index:end_index])
+                    child = self._parse(arguments[start_index:end_index], False)
                     tree.append_child(child)
                     start_index = end_index + 1
 
                 index += 1
 
             if end_index < len(arguments) - 1:
-                child = self._parse(arguments[start_index: len(arguments)])
+                child = self._parse(arguments[start_index: len(arguments)], False)
                 tree.append_child(child)
 
             return tree
         # field
         else:
             try:
-                val = ast.literal_eval(args)
+                val = ast.literal_eval(args.strip())
+                # trying to cast to type
                 if isinstance(val, (bool, int, float, str)):
-                    if tree.operation is None:
+                    # when no field name or operation but num or str
+                    # and no operation in syntax tree
+                    # set empty operation
+                    if isinstance(val, str):
+                        val = "'{}'".format(val)
+                    if tree.amIParent:
                         tree.operation = "_" 
                         tree.append_child(val) 
                         return tree
@@ -122,7 +129,8 @@ class TransformationsParser:
                     lambda t: t.strip(),
                     transformation.split(":")))
                 self.expanded_transformation.append(
-                    FieldTransformation(field_name, self._parse(field_body)))
+                    FieldTransformation(field_name, self._parse(field_body, True)))
+
 
 
 class TransformationsParserConfig:

@@ -33,13 +33,9 @@ class TransformationCreator:
                         ch.endswith(self.stringQuote):
                     args.append(ch)
                     continue
-                try:
-                    ch_typed = ast.literal_eval(ch)
-                    if isinstance(ch_typed, (bool, int, float, str)):
-                        args.append(ch_typed)
-                except:
-                    args.append(row[self.mapping[ch]]
-                                if ch in self.mapping.keys() else int(ch))
+                args.append(row[self.mapping[ch]] if ch in self.mapping.keys() else int(ch))
+            elif isinstance(ch, (bool, int, float)):
+                args.append(ch)
             else:
                 operation = self.transformation_operations.operations_dict[ch.operation].func
                 args.append(
@@ -62,17 +58,9 @@ class TransformationCreator:
                 if isinstance(exp_tr.body, str):
                     if exp_tr.body.startswith(self.stringQuote) and \
                             exp_tr.body.endswith(self.stringQuote):
-                        lambdas.append(
-                            self._get_column_value_lambda(exp_tr.body))
-                    else:
-                        try:
-                            v = ast.literal_eval(exp_tr.body)
-                            if isinstance(v, (bool, int, float)):
-                                lambdas.append(
-                                    self._get_column_value_lambda(exp_tr.body))
-                        except:
-                            lambdas.append(self._get_column_value_lambda(
-                                self.mapping[exp_tr.body]))
+                        lambdas.append(exp_tr.body)
+                        continue
+                    lambdas.append(self._get_column_value_lambda(self.mapping[exp_tr.body]))
                 elif isinstance(exp_tr.body, (bool, int, float)):
                     lambdas.append(exp_tr.body)
                 else:

@@ -54,8 +54,8 @@ class MapOperation(object):
             raise errors.IncorrectArgumentTypeForOperationError(e)
         rt = avail_types[max(indexes)]
         return rt
-
-
+        
+        
 class UnarySameTypeOperation(MapOperation):
     def __init__(self, name, func):
         super().__init__(name, 1, func)
@@ -86,7 +86,10 @@ class MathDiv(MapOperation):
 
 class EmptyOperation(UnarySameTypeOperation):
     def __init__(self):
-        super().__init__("_", lambda x: x)
+        super().__init__("_", lambda x: x.strip("'") if isinstance(x, str) else x)
+    
+    def result_type(self, arg_types = []):
+        return arg_types[0]
 
 class Boolean(MapOperation):
     def result_type(self, _ = []):

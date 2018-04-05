@@ -23,7 +23,7 @@ CONFIG_PATH = os.path.join(os.path.dirname(
     __file__), os.path.join("..", "data", "config.json"))
 
 stub = {
-    "sum": [2, 2, 3],
+    "add": [2, 3],
     "first_mult": [1, 3],
     "second_mult": [
         1,
@@ -55,7 +55,7 @@ class TransformationsParserTest(unittest.TestCase):
         parser = TransformationsParser(
             config.content["processing"]["transformation"])
 
-        result = parser._parse("sample_rating")
+        result = parser._parse("sample_rating", True)
         self.assertIsInstance(
             result, str, "Result should be instance of string")
         self.assertEqual(result, "sample_rating",
@@ -63,67 +63,97 @@ class TransformationsParserTest(unittest.TestCase):
 
     def test__parse_transformation_types(self):
         parser = TransformationsParser([])
-        self.assertIsInstance(parser._parse("1"), int,
-                                "Result should be an instance of int")
-        self.assertIsInstance(parser._parse("1.0"), float,
-                                "Result should be an instance of float")
-        self.assertIsInstance(parser._parse("True"), bool,
-                                "Result should be an instance of bool")
-        self.assertIsInstance(parser._parse("False"), bool,
-                                "Result should be an instance of bool")
-        self.assertIsInstance(parser._parse("Foo"), str,
-                                "Result should be an instance of str")
-        self.assertIsInstance(parser._parse("'Foo\'Bar'"), str,
-                                "Result should be an instance of str")
-        self.assertIsInstance(parser._parse("'Bar'"), str,
-                                "Result should be an instance of str")
-        self.assertIsInstance(parser._parse("4E+8"), float,
-                                "Result should be an instance of float")
-        self.assertIsInstance(parser._parse("'Foo\"bar'"), str,
-                                "Result should be an instance of str")
+        p = parser._parse("1", True)
+        self.assertIsInstance(p, SyntaxTree,
+                              "Result should be an instance of int")
+        self.assertIsInstance(p.children[0], int,
+                              "Result should be an instance of int")
+        p = parser._parse("1.0", True)
+        self.assertIsInstance(p, SyntaxTree,
+                              "Result should be an instance of float")
+        self.assertIsInstance(p.children[0], float,
+                              "Result should be an instance of int")
+        p = parser._parse("False", True)                              
+        self.assertIsInstance(p, SyntaxTree,
+                              "Result should be an instance of bool")
+        self.assertIsInstance(p.children[0], bool,
+                              "Result should be an instance of int")
+        p = parser._parse("True", True)                              
+        self.assertIsInstance(p, SyntaxTree,
+                              "Result should be an instance of bool")
+        self.assertIsInstance(p.children[0], bool,
+                              "Result should be an instance of int")
+        p = parser._parse("'Fo,o'", True)                           
+        self.assertIsInstance(p, SyntaxTree,
+                              "Result should be an instance of str")
+        self.assertIsInstance(p.children[0], str,
+                              "Result should be an instance of int")
+        p = parser._parse("'Foo\\'Bar'", True)                              
+        self.assertIsInstance(p, SyntaxTree,
+                              "Result should be an instance of str")
+        self.assertIsInstance(p.children[0], str,
+                              "Result should be an instance of int")
+        p = parser._parse("'Bar'", True)                              
+        self.assertIsInstance(p, SyntaxTree,
+                              "Result should be an instance of str")
+        self.assertIsInstance(p.children[0], str,
+                              "Result should be an instance of int")
+        p = parser._parse("4E+8", True)                              
+        self.assertIsInstance(p, SyntaxTree,
+                              "Result should be an instance of float")
+        self.assertIsInstance(p.children[0], float,
+                              "Result should be an instance of int")
+        p = parser._parse("'Foo\\\"bar'", True)                              
+        self.assertIsInstance(p, SyntaxTree,
+                              "Result should be an instance of str")
+        self.assertIsInstance(p.children[0], str,
+                                  "Result should be an instance of int")
+        p = parser._parse("sample_rating",True)                              
+        self.assertIsInstance(p, str,
+                              "Result should be an instance of str")
 
     def test__parse_simple_operation(self):
         config = TransformationsParserConfig(CONFIG_PATH)
         parser = TransformationsParser(
             config.content["processing"]["transformation"])
 
-        expression = "sum({})".format(",".join(str(i) for i in stub["sum"]))
+        expression = "add({})".format(",".join(str(i) for i in stub["add"]))
 
-        result = parser._parse(expression)
+        result = parser._parse(expression, True)
         self.assertIsInstance(result, SyntaxTree,
                               "Result should be instance of SyntaxTree")
-        self.assertEqual(result.operation, "sum", "Operation should be 'sum'")
-        self.assertEqual(len(result.children), 3, "Should have 3 children")
+        self.assertEqual(result.operation, "add", "Operation should be 'add'")
+        self.assertEqual(len(result.children), 2, "Should have 3 children")
 
-        for index in range(0, 3):
+        for index in range(0, 2):
             self.assertIsInstance(result.children[index], int,
                                   "children[{}] should be instance of Leaf".format(index))
-            self.assertEqual(result.children[index], stub["sum"][index],
-                             "Sum {} argument should be {}".format(index, stub["sum"][index]))
+            self.assertEqual(result.children[index], stub["add"][index],
+                             "Add {} argument should be {}".format(index, stub["add"][index]))
 
     def test__parse_nested_operations(self):
         config = TransformationsParserConfig(CONFIG_PATH)
         parser = TransformationsParser(
             config.content["processing"]["transformation"])
 
-        expression = "minus(mult({}),mult({},sum({})))".format(
+        expression = "sub(mul({}),mul({},add({})))".format(
             ",".join(str(i) for i in stub["first_mult"]),
             str(stub["second_mult"][0]),
             ",".join(str(i) for i in stub["second_mult"][1]))
-        result = parser._parse(expression)
+        result = parser._parse(expression, True)
         self.assertIsInstance(result, SyntaxTree,
                               "Result should be instance of SyntaxTree")
-        self.assertEqual(result.operation, "minus",
-                         "Operation should be 'minus'")
+        self.assertEqual(result.operation, "sub",
+                         "Operation should be 'sub'")
         self.assertEqual(len(result.children), 2, "Should have 2 children")
 
-        # Check first child # mult(1,3)
-        first_mult = result.children[0]  # mult(1,3)
+        # Check first child # mul(1,3)
+        first_mult = result.children[0]  # mul(1,3)
 
         self.assertIsInstance(first_mult, SyntaxTree,
                               "Result should be instance of SyntaxTree")
-        self.assertEqual(first_mult.operation, "mult",
-                         "Operation should be 'mult'")
+        self.assertEqual(first_mult.operation, "mul",
+                         "Operation should be 'mul'")
         self.assertEqual(len(first_mult.children), 2, "Should have 2 children")
 
         for index in range(0, 2):
@@ -140,8 +170,8 @@ class TransformationsParserTest(unittest.TestCase):
         second_mult = result.children[1]
         self.assertIsInstance(second_mult, SyntaxTree,
                               "Result should be instance of SyntaxTree")
-        self.assertEqual(second_mult.operation, "mult",
-                         "Operation should be 'mult'")
+        self.assertEqual(second_mult.operation, "mul",
+                         "Operation should be 'mul'")
         self.assertEqual(len(second_mult.children),
                          2, "Should have 2 children")
 
@@ -153,26 +183,26 @@ class TransformationsParserTest(unittest.TestCase):
         self.assertEqual(
             second_mult.children[0],
             stub["second_mult"][0],
-            "Mult {} argument should be {}".format(0, str(stub["second_mult"][0])))
+            "Mul {} argument should be {}".format(0, str(stub["second_mult"][0])))
 
         # second_mult[1] should be SyntaxTree
-        sub_sum = second_mult.children[1]
+        sub_add = second_mult.children[1]
         self.assertIsInstance(
-            sub_sum,
+            sub_add,
             SyntaxTree,
             "children[{}] should be instance of SyntaxTree".format(1))
-        self.assertEqual(sub_sum.operation, "sum", "Operation should be 'sum'")
-        self.assertEqual(len(sub_sum.children), 2, "Should have 2 children")
+        self.assertEqual(sub_add.operation, "add", "Operation should be 'add'")
+        self.assertEqual(len(sub_add.children), 2, "Should have 2 children")
 
         for index in range(0, 2):
             self.assertIsInstance(
-                sub_sum.children[index],
+                sub_add.children[index],
                 int,
                 "children[{}] should be instance of str".format(index))
             self.assertEqual(
-                sub_sum.children[index],
+                sub_add.children[index],
                 stub["second_mult"][1][index],
-                "Sum {} argument should be {}".format(index, stub["second_mult"][1][index]))
+                "Add {} argument should be {}".format(index, stub["second_mult"][1][index]))
 
     def test__parse_raise_incorrect_expression_error(self):
         config = TransformationsParserConfig(CONFIG_PATH)
@@ -180,7 +210,7 @@ class TransformationsParserTest(unittest.TestCase):
             config.content["processing"]["transformation"])
 
         with self.assertRaises(errors.IncorrectExpression):
-            parser._parse("sum((1,2)")
+            parser._parse("add((1,2)", True)
 
     def test_run(self):
         config = TransformationsParserConfig(CONFIG_PATH)
