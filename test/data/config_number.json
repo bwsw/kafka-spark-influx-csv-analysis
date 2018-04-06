@@ -11,10 +11,11 @@
             "sep": ","
         }
     },
-    "output": {
+    "outputs": [{
+        "main": true,
         "method": "stdout",
         "options": {}
-    },
+    }],
     "processing": {
         "transformation": [
             "traffic: 13"

@@ -1,10 +1,11 @@
 {
-  "output": {
+  "outputs": [{
+    "main": true,
     "input_type": "bin",
     "options": {
       "filename": "test/data/test.csv"
     }
-  },
+  }],
   "databases": {
     "country": "./GeoLite2/GeoLite2-Country.mmdb",
     "city": "./GeoLite2/GeoLite2-City.mmdb",

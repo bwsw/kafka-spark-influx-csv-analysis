@@ -10,11 +10,11 @@
       "sep": ","
     }
   },
-  "output": {
+  "outputs": [{
+    "main": true,
     "method": "stdout",
-    "options": {
-    }
-  },
+    "options": {}
+  }],
   "processing": {
     "transformation": [
       "packet_size",

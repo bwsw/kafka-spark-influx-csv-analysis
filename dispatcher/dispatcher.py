@@ -22,7 +22,7 @@ class Dispatcher:
     def __init__(self, config):
         self.executor = ReadFactory(config).get_executor()
         self.processor = Processor(config)
-        self.writer = WriterFactory().instance_writer(config, self.processor.aggregation_output_struct,
+        self.writer = WriterFactory().get_writers(config, self.processor.aggregation_output_struct,
                                                       self.processor.enumerate_output_aggregation_field)
         self._isAnalysis = False
 

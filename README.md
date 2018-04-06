@@ -100,7 +100,8 @@ To run the application, you will need a configuration file. It is a json file wi
       "sep": ","
     }
   },
-  "output": {
+  "outputs": [{
+    "main": true,
     "method": "influx",
     "options": {
       "influx": {
@@ -112,7 +113,7 @@ To run the application, you will need a configuration file. It is a json file wi
         "measurement": "points"
       }
     }
-  },
+  }],
   "processing": {
     "transformation": [
     "counter: one(timestamp)",

@@ -26,16 +26,16 @@ INCORRECT_CONFIG_PATH = os.path.join(os.path.dirname(__file__), os.path.join("..
 
 
 class WriterFactoryTestCase(unittest.TestCase):
-    def test_instance_writer(self):
+    def test_get_writers(self):
         factory = WriterFactory()
         config = OutputConfig(CONFIG_PATH)
 
-        writer = factory.instance_writer(config, list(), list())
+        writer = factory.get_writers(config, list(), list())
         self.assertIsInstance(writer, StdOutWriter, "Writer should be instance of StdOutWriter")
 
-    def test_unsupported_output_format_exception_instance_writer(self):
+    def test_unsupported_output_format_exception_get_writers(self):
         factory = WriterFactory()
         config = OutputConfig(INCORRECT_CONFIG_PATH)
 
         with self.assertRaises(errors.UnsupportedOutputFormat):
-            factory.instance_writer(config, list(), list())
+            factory.get_writers(config, list(), list())

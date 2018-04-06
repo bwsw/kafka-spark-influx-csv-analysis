@@ -19,8 +19,12 @@ from .influx_writer import InfluxWriter
 
 
 class WriterFactory:
-    def instance_writer(self, output_config, struct, enumerate_input_field):
-        output = output_config.content["output"]
+    def get_writers(self, output_config, struct, enumerate_input_field):
+        main_output = [o for o in output_config.content["outputs"] if o["main"] == True]
+        main_output = main_output[0]
+        return self.get_writer(main_output, struct, enumerate_input_field)
+
+    def get_writer(self, output, struct, enumerate_input_field):
         if output["method"] == "influx":
             client = InfluxDBClient(output["options"]["influx"]["host"], output["options"]["influx"]["port"],
                                     output["options"]["influx"]["username"], output["options"]["influx"]["password"],

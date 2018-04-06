@@ -9,12 +9,13 @@
       }
     }
   },
-  "output": {
+  "outputs": [{
+    "main": true,
     "method": "json",
     "options": {
       "json": {
         "path": "1.json"
       }
     }
-  }
+  }]
 }

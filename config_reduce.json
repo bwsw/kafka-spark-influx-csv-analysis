@@ -10,7 +10,8 @@
       "sep": ","
     }
   },
-  "output": {
+  "outputs": [{
+    "main": true,
     "method": "influx",
     "options": {
       "influx": {
@@ -22,7 +23,7 @@
         "measurement": "points"
       }
     }
-  },
+  }],
   "processing": {
     "transformation": [
       "packet_size",

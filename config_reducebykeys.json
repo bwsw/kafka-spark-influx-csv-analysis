@@ -11,19 +11,27 @@
       "sep": ","
     }
   },
-  "output": {
-    "method": "influx",
-    "options": {
-      "influx": {
-        "host": "data-store",
-        "port": 8086,
-        "username": "root",
-        "password": "root",
-        "database": "sensors",
-        "measurement": "points"
-      }
-    }
-  },
+  "outputs": [
+	{
+		"main": true,
+    		"method": "influx",
+    		"options": {
+      			"influx": {
+        			"host": "data-store",
+        			"port": 8086,
+        			"username": "root",
+        			"password": "root",
+        			"database": "sensors",
+        			"measurement": "points"
+      			}
+    		}
+  	},
+        {
+                "main": false,
+                "method": "stdout",
+                "options": {}
+        }
+  ],
   "processing": {
     "transformation": [
 	"counter: one(timestamp)",
