@@ -1,0 +1,44 @@
+{
+   "input": {
+      "input_type": "kafka",
+      "data_structure": "config_data_structure.json",
+      "options": {
+         "server": "10.12.25.195",
+         "port": 29092,
+         "topic": "testtag01",
+         "consumer_group": "data-consumer",
+         "batchDuration": 10,
+         "sep": ","
+      }
+   },
+   "outputs": [{
+      "main": true,
+      "method": "stdout",
+      "options": {}
+   },
+   {
+      "main": true,
+      "method": "stdout",
+      "options": {}
+   }],
+   "processing": {
+      "transformation": [
+         "source_ip: src_ip",
+         "dst_ip",
+         "src_country: country_of(src_ip)",
+         "traffic: mul(packet_size, sampling_rate)"
+      ],
+      "aggregations": {
+         "operation_type": "reduce",
+         "rule": [
+            "Min(traffic)",
+            "Sum(traffic)"
+         ]
+      }
+   },
+   "databases": {
+      "country": "./GeoLite2/GeoLite2-Country.mmdb",
+      "city": "./GeoLite2/GeoLite2-City.mmdb",
+      "asn": "./GeoLite2/GeoLite2-ASN.mmdb"
+   }
+}

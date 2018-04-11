@@ -23,7 +23,7 @@ from output.writer_factory import WriterFactory
 
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), os.path.join("..", "data", "config.json"))
 INCORRECT_CONFIG_PATH = os.path.join(os.path.dirname(__file__), os.path.join("..", "data", "bad_config.json"))
-
+CONFIG_MOUTS_PATH = os.path.join(os.path.dirname(__file__), os.path.join("..", "data", "config_multiple_outputs.json"))
 
 class WriterFactoryTestCase(unittest.TestCase):
     def test_get_writers(self):
@@ -39,3 +39,11 @@ class WriterFactoryTestCase(unittest.TestCase):
 
         with self.assertRaises(errors.UnsupportedOutputFormat):
             factory.get_writers(config, list(), list())
+
+    def test_multiple_outputs(self):
+        factory = WriterFactory()
+        config = OutputConfig(CONFIG_MOUTS_PATH)
+
+        writers = factory.get_writers(config, list(), list())
+        self.assertIsInstance(writers[0], StdOutWriter, "Writer should be instance of StdOutWriter")
+        self.assertIsInstance(writers[1], StdOutWriter, "Writer should be instance of StdOutWriter")
