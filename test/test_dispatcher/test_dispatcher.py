@@ -47,5 +47,5 @@ class DispatcherTestCase(unittest.TestCase):
         self.assertTrue(hasattr(dispatcher.processor, "get_pipeline_processing"),
                         "processor should has get_pipeline_processing method")
 
-        self.assertIsInstance(dispatcher.writer, OutputWriter, "Writer should has type WriterMock")
-        self.assertTrue(hasattr(dispatcher.writer, "get_write_lambda"), "Writer should has get_write_lambda method")
+        self.assertIsInstance(dispatcher.writers[0], OutputWriter, "Writer should has type WriterMock")
+        self.assertTrue(hasattr(dispatcher.writers[0], "get_write_lambda"), "Writer should has get_write_lambda method")

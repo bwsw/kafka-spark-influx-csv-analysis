@@ -30,8 +30,8 @@ class WriterFactoryTestCase(unittest.TestCase):
         factory = WriterFactory()
         config = OutputConfig(CONFIG_PATH)
 
-        writer = factory.get_writers(config, list(), list())
-        self.assertIsInstance(writer, StdOutWriter, "Writer should be instance of StdOutWriter")
+        writers = factory.get_writers(config, list(), list())
+        self.assertIsInstance(writers[0], StdOutWriter, "Writer should be instance of StdOutWriter")
 
     def test_unsupported_output_format_exception_get_writers(self):
         factory = WriterFactory()

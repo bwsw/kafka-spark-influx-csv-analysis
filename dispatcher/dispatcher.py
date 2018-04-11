@@ -22,7 +22,7 @@ class Dispatcher:
     def __init__(self, config):
         self.executor = ReadFactory(config).get_executor()
         self.processor = Processor(config)
-        self.writer = WriterFactory().get_writers(config, self.processor.aggregation_output_struct,
+        self.writers = WriterFactory().get_writers(config, self.processor.aggregation_output_struct,
                                                       self.processor.enumerate_output_aggregation_field)
         self._isAnalysis = False
 
@@ -35,14 +35,16 @@ class Dispatcher:
     def run_pipeline(self):
         processor_part = self.processor.get_pipeline_processing()
 
-        write_lambda = self.writer.get_write_lambda()
+        write_funcs = [w.get_write_lambda() for w in self.writers]
+        write_func = lambda rdd: [w(rdd) for w in write_funcs]
+
         # pipeline = lambda rdd: write_lambda(processor_part(rdd))
         if self._isAnalysis:
             analysis_lambda = self.analysis.get_analysis_lambda()
-            pipeline = lambda rdd: self._all_pipeline(rdd, processor_part, write_lambda, analysis_lambda)
+            pipeline = lambda rdd: self._all_pipeline(rdd, processor_part, write_func, analysis_lambda)
         else:
             analysis_lambda = lambda x: x
-            pipeline = lambda rdd: self._all_pipeline(rdd, processor_part, write_lambda, analysis_lambda)
+            pipeline = lambda rdd: self._all_pipeline(rdd, processor_part, write_func, analysis_lambda)
 
         self.executor.set_pipeline_processing(pipeline)
         self.executor.run_pipeline()
