@@ -19,8 +19,8 @@ from processor.processor import Processor
 
 
 class Dispatcher:
-    def __init__(self, config):
-        self.executor = ReadFactory(config).get_executor()
+    def __init__(self, config, file_config):
+        self.executor = ReadFactory(config, file_config).get_executor()
         self.processor = Processor(config)
         self.writers = WriterFactory().get_writers(config, self.processor.aggregation_output_struct,
                                                       self.processor.enumerate_output_aggregation_field)

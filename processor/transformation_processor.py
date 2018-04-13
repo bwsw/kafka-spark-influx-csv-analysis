@@ -23,7 +23,7 @@ class TransformationProcessor:
         transformations_parser = TransformationsParser(config.content["processing"]["transformation"])
         transformations_parser.run()
 
-        operations = TransformationOperations()
+        operations = TransformationOperations(config.content)
 
         self.transformations_validator = TransformationsValidator(operations, config.data_structure_pyspark)
         self.fields = self.transformations_validator.validate(transformations_parser.expanded_transformation)

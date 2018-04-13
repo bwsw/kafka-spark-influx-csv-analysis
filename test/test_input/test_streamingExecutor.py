@@ -13,11 +13,6 @@
 # limitations under the License.
 
 from unittest import TestCase, mock
-
-from pyspark import SparkConf
-from pyspark.sql import SparkSession
-from pyspark.streaming import StreamingContext
-from pyspark.streaming import DStream
 from errors.errors import ExecutorError
 from input.executors import StreamingExecutor
 

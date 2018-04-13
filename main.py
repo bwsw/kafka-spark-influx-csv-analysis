@@ -23,8 +23,9 @@ if __name__ == "__main__":
             logging.critical("Invalid amount of arguments\nUsage: main.py <config.json>")
             exit(1)
 
-        config = Config(sys.argv[1].strip())
-        dispatcher = Dispatcher(config)
+        path_to_config = sys.argv[1].strip()
+        config = Config(path_to_config)
+        dispatcher = Dispatcher(config, path_to_config)
         dispatcher.run_pipeline()
         dispatcher.stop_pipeline()
     except KeyboardInterrupt:

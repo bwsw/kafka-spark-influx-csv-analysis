@@ -25,15 +25,25 @@ from config_parsing.transformations_validator import TransformationsValidator
 from operations.transformation_operations import TransformationOperations
 from processor.transformation_creator import TransformationCreator
 
-DATA_PATH = os.path.join(os.path.dirname(
-    __file__), os.path.join("..", "data", "test.csv"))
+DATA_PATH = os.path.join(
+    os.path.dirname(__file__),
+    os.path.join("..", "data", "test.csv"))
+
+CONFIG_PATH = os.path.join(
+    os.path.dirname(__file__),
+    os.path.join("..", "data", "config.json"))
 
 
 class TransformationCreatorTestCase(TestCase):
     def setUp(self):
-        with open(os.path.join(os.path.dirname(__file__),
-                               os.path.join("..", "data", "config_data_structure.json"))) as cfg:
+        with open(os.path.join(
+                os.path.dirname(__file__),
+                os.path.join("..", "data", "config_data_structure.json"))) as cfg:
             data_structure = json.load(cfg)
+        with open(os.path.join(
+                os.path.dirname(__file__),
+                os.path.join("..", "data", "config.json"))) as cfg:
+            self.config = json.load(cfg)
 
         self.data_structure = data_structure
         data_structure_list = list(
@@ -53,7 +63,7 @@ class TransformationCreatorTestCase(TestCase):
                                   FieldTransformation("traffic", mult_syntax_tree)]
 
         creator = TransformationCreator(
-            self.data_structure, parsed_transformations, TransformationOperations())
+            self.data_structure, parsed_transformations, TransformationOperations(self.config))
 
         transformation = creator.build_lambda()
 
@@ -86,9 +96,8 @@ class TransformationCreatorTestCase(TestCase):
 
         parsed_transformations = ["src_ip", FieldTransformation("destination_ip", "dst_ip"),
                                   FieldTransformation("traffic", root_mult_st)]
-
         creator = TransformationCreator(self.data_structure, parsed_transformations,
-                                        TransformationOperations())
+                                        TransformationOperations(self.config))
 
         transformation = creator.build_lambda()
 
@@ -118,8 +127,9 @@ class TransformationCreatorTestCase(TestCase):
 
         parsed_transformations = [
             FieldTransformation("ephemer", st)]
+
         creator = TransformationCreator(self.data_structure, parsed_transformations,
-                                        TransformationOperations())
+                                        TransformationOperations(self.config))
         transformation = creator.build_lambda()
 
         self.assertIsInstance(transformation, types.LambdaType,
@@ -153,7 +163,7 @@ class TransformationCreatorTestCase(TestCase):
         parsed_transformations = [
             FieldTransformation("nested", st2)]
         creator = TransformationCreator(self.data_structure, parsed_transformations,
-                                        TransformationOperations())
+                                        TransformationOperations(self.config))
         transformation = creator.build_lambda()
 
         self.assertIsInstance(transformation, types.LambdaType,
@@ -186,9 +196,8 @@ class TransformationCreatorTestCase(TestCase):
 
         parsed_transformations = [
             FieldTransformation("traffic", mult_syntax_tree_root)]
-
         creator = TransformationCreator(self.data_structure, parsed_transformations,
-                                        TransformationOperations())
+                                        TransformationOperations(self.config))
 
         transformation = creator.build_lambda()
 
@@ -219,9 +228,8 @@ class TransformationCreatorTestCase(TestCase):
 
         parsed_transformations = [
             FieldTransformation("cut_upto_2_symbols", st)]
-
         creator = TransformationCreator(self.data_structure, parsed_transformations,
-                                        TransformationOperations())
+                                        TransformationOperations(self.config))
 
         transformation = creator.build_lambda()
 
@@ -246,9 +254,8 @@ class TransformationCreatorTestCase(TestCase):
         st.children = [1.2E+5, 1.0]
         parsed_transformations = [
             FieldTransformation("sum", st)]
-
         creator = TransformationCreator(self.data_structure, parsed_transformations,
-                                        TransformationOperations())
+                                        TransformationOperations(self.config))
 
         transformation = creator.build_lambda()
 
@@ -276,14 +283,14 @@ class TransformationCreatorTestCase(TestCase):
         parsed_transformations = [
             FieldTransformation("a", st)]
 
-        operations = TransformationOperations()
+        operations = TransformationOperations(self.config)
 
         transformations_validator = TransformationsValidator(
             operations, self.data_structure)
         _ = transformations_validator.validate(parsed_transformations)
 
         creator = TransformationCreator(self.data_structure, parsed_transformations,
-                                        TransformationOperations())
+                                        TransformationOperations(self.config))
 
         transformation = creator.build_lambda()
 
@@ -306,12 +313,12 @@ class TransformationCreatorTestCase(TestCase):
         parser = TransformationsParser(["dst_ip: 13"])
         parser.run()
 
-        operations = TransformationOperations()
+        operations = TransformationOperations(self.config)
         transformations_validator = TransformationsValidator(
             operations, self.data_structure)
         _ = transformations_validator.validate(parser.expanded_transformation)
         creator = TransformationCreator(self.data_structure, parser.expanded_transformation,
-                                        TransformationOperations())
+                                        TransformationOperations(self.config))
 
         transformation = creator.build_lambda()
 
@@ -329,18 +336,17 @@ class TransformationCreatorTestCase(TestCase):
             "List of tuples should be equal")
 
         spark.stop()
-        
+
     def test_build_lambda_processor_int_unsigned(self):
         parser = TransformationsParser(["dst_ip: +13"])
         parser.run()
-
-        operations = TransformationOperations()
+        operations = TransformationOperations(self.config)
 
         transformations_validator = TransformationsValidator(
             operations, self.data_structure)
         _ = transformations_validator.validate(parser.expanded_transformation)
         creator = TransformationCreator(self.data_structure, parser.expanded_transformation,
-                                        TransformationOperations())
+                                        TransformationOperations(self.config))
 
         transformation = creator.build_lambda()
 
@@ -363,15 +369,14 @@ class TransformationCreatorTestCase(TestCase):
     def test_build_lambda_processor_int_neg(self):
         parser = TransformationsParser(["dst_ip: -13"])
         parser.run()
-
-        operations = TransformationOperations()
+        operations = TransformationOperations(self.config)
 
         transformations_validator = TransformationsValidator(
             operations, self.data_structure)
         _ = transformations_validator.validate(parser.expanded_transformation)
 
         creator = TransformationCreator(self.data_structure, parser.expanded_transformation,
-                                        TransformationOperations())
+                                        TransformationOperations(self.config))
 
         transformation = creator.build_lambda()
 
@@ -394,14 +399,13 @@ class TransformationCreatorTestCase(TestCase):
     def test_build_lambda_processor_float_neg(self):
         parser = TransformationsParser(["dst_ip: -13.5"])
         parser.run()
-
-        operations = TransformationOperations()
+        operations = TransformationOperations(self.config)
 
         transformations_validator = TransformationsValidator(
             operations, self.data_structure)
         _ = transformations_validator.validate(parser.expanded_transformation)
         creator = TransformationCreator(self.data_structure, parser.expanded_transformation,
-                                        TransformationOperations())
+                                        TransformationOperations(self.config))
 
         transformation = creator.build_lambda()
 
@@ -431,14 +435,13 @@ class TransformationCreatorTestCase(TestCase):
                 "foobar2: 'add\\'(-13.5,2)'"
             ])
         parser.run()
-
-        operations = TransformationOperations()
+        operations = TransformationOperations(self.config)
 
         transformations_validator = TransformationsValidator(
             operations, self.data_structure)
         _ = transformations_validator.validate(parser.expanded_transformation)
         creator = TransformationCreator(self.data_structure, parser.expanded_transformation,
-                                        TransformationOperations())
+                                        TransformationOperations(self.config))
 
         transformation = creator.build_lambda()
 
@@ -467,13 +470,13 @@ class TransformationCreatorTestCase(TestCase):
         parser = TransformationsParser(["a: '-13.5'"])
         parser.run()
 
-        operations = TransformationOperations()
+        operations = TransformationOperations(self.config)
 
         transformations_validator = TransformationsValidator(
             operations, self.data_structure)
         _ = transformations_validator.validate(parser.expanded_transformation)
         creator = TransformationCreator(self.data_structure, parser.expanded_transformation,
-                                        TransformationOperations())
+                                        TransformationOperations(self.config))
 
         transformation = creator.build_lambda()
 
@@ -500,13 +503,13 @@ class TransformationCreatorTestCase(TestCase):
             "src_ip: False"])
         parser.run()
 
-        operations = TransformationOperations()
+        operations = TransformationOperations(self.config)
 
         transformations_validator = TransformationsValidator(
             operations, self.data_structure)
         _ = transformations_validator.validate(parser.expanded_transformation)
         creator = TransformationCreator(self.data_structure, parser.expanded_transformation,
-                                        TransformationOperations())
+                                        TransformationOperations(self.config))
 
         transformation = creator.build_lambda()
 
@@ -527,5 +530,77 @@ class TransformationCreatorTestCase(TestCase):
                 (True, False),
                 (True, False),
                 (True, False)], "List of tuples should be equal")
+
+        spark.stop()
+
+    def test_build_lambda_processor_config(self):
+        parser = TransformationsParser(["a: config('input.options.port')"])
+        parser.run()
+        operations = TransformationOperations(self.config)
+
+        transformations_validator = TransformationsValidator(
+            operations, self.data_structure)
+
+        _ = transformations_validator.validate(parser.expanded_transformation)
+        creator = TransformationCreator(self.data_structure, parser.expanded_transformation,
+                                        TransformationOperations(self.config))
+
+        transformation = creator.build_lambda()
+
+        self.assertIsInstance(transformation, types.LambdaType,
+                              "Transformation type should be lambda")
+
+        spark = SparkSession.builder.getOrCreate()
+        file = spark.read.csv(DATA_PATH, self.data_structure_pyspark)
+
+        result = file.rdd.map(transformation)
+
+        result = result.collect()
+
+        self.assertListEqual(
+            result, [(29092,), (29092,), (29092,), (29092,), (29092,)],
+            "List of tuples should be equal")
+
+        spark.stop()
+
+    def test_build_lambda_processor_nested_config(self):
+        parser = TransformationsParser([
+            "bd:config('input.options.batchDuration')",
+            "port:config('input.options.port')",
+            "concat:concat('Port - ',concat(3,config('input.options.port')))",
+            "concat:add(10,int(config('input.options.port')))"
+        ])
+        parser.run()
+        operations = TransformationOperations(self.config)
+
+        transformations_validator = TransformationsValidator(
+            operations, self.data_structure)
+        _ = transformations_validator.validate(parser.expanded_transformation)
+
+        creator = TransformationCreator(
+            self.data_structure,
+            parser.expanded_transformation,
+            TransformationOperations(self.config))
+
+        transformation = creator.build_lambda()
+
+        self.assertIsInstance(transformation, types.LambdaType,
+                              "Transformation type should be lambda")
+
+        spark = SparkSession.builder.getOrCreate()
+        file = spark.read.csv(DATA_PATH, self.data_structure_pyspark)
+
+        result = file.rdd.map(transformation)
+
+        result = result.collect()
+
+        self.assertListEqual(
+            result, [
+                (10, 29092, 'Port - 329092', 29102),
+                (10, 29092, 'Port - 329092', 29102),
+                (10, 29092, 'Port - 329092', 29102),
+                (10, 29092, 'Port - 329092', 29102),
+                (10, 29092, 'Port - 329092', 29102)],
+            "List of tuples should be equal")
 
         spark.stop()

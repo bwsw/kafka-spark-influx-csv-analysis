@@ -13,8 +13,6 @@
 # limitations under the License.
 
 from config_parsing.transformations_parser import FieldTransformation
-import re
-import ast
 
 
 class TransformationCreator:

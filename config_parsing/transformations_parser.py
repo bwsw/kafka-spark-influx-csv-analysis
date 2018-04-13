@@ -41,6 +41,7 @@ class SyntaxTree:
             else:
                 print(" " * (shift + 1) * 2 + "Leaf node: ", ch)
 
+
 class TransformationsParser:
     def __init__(self, transformations):
         self.transformations = transformations
@@ -81,7 +82,7 @@ class TransformationsParser:
                     if open_bracket != close_bracket:
                         raise errors.IncorrectExpression(
                             "Incorrect expression: {} open brackets and {} close brackets ".
-                            format(open_bracket, close_bracket))
+                                format(open_bracket, close_bracket))
 
                 elif arguments[index] == ",":
                     end_index = index
@@ -108,8 +109,8 @@ class TransformationsParser:
                     if isinstance(val, str):
                         val = "'{}'".format(val)
                     if tree.amIParent:
-                        tree.operation = "_" 
-                        tree.append_child(val) 
+                        tree.operation = "_"
+                        tree.append_child(val)
                         return tree
                     return val
             except:
@@ -130,7 +131,6 @@ class TransformationsParser:
                     transformation.split(":")))
                 self.expanded_transformation.append(
                     FieldTransformation(field_name, self._parse(field_body, True)))
-
 
 
 class TransformationsParserConfig:

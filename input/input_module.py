@@ -26,6 +26,7 @@ string_to_string = lambda x: x
 string_to_float = lambda x: float(x)
 string_to_boolean = lambda x: bool(x)
 
+
 def type_to_func(type_field):
     if type_field == IntegerType():
         return string_to_int
@@ -67,29 +68,30 @@ class ReadFactory():
     configuration/
     """
 
-    def __init__(self, input_config):
+    def __init__(self, input_config, file_config):
         """
         Create ReadFactory with set config file
 
         :param input_config: A object of Config class with input options
         """
         self._config = input_config
+        self._file_config = file_config
 
     def get_executor(self):
         """
         The getExecutor create executor depending input config file
         :return:
         """
-        if ("input" in self._config.content.keys()):
-            if (self._config.content["input"]["input_type"] == "kafka"):
-                return KafkaStreaming(self._config).get_streaming_executor()
+        if "input" in self._config.content.keys():
+            if self._config.content["input"]["input_type"] == "kafka":
+                return KafkaStreaming(self._config, self._file_config).get_streaming_executor()
             raise InputError("Error: {} unsuported input format. ReadFactory cannot create Executable".format(
                 self._config.content["input"]))
         raise InputError("Error: Some option was miss in config file. ReadFactory cannot create Executable")
 
 
 class KafkaStreaming(object):
-    def __init__(self, config):
+    def __init__(self, config, file_config):
 
         self._server = config.content["input"]["options"]["server"]
         self._port = config.content["input"]["options"]["port"]
@@ -101,8 +103,12 @@ class KafkaStreaming(object):
         self._spark = SparkSession.builder.appName("StreamingDataKafka").getOrCreate()
         sc = self._spark.sparkContext
 
+        # database files registration
         for name, file in config.content["databases"].items():
             sc.addFile(file)
+
+        # configuration file registration
+        sc.addFile(file_config)
 
         self._ssc = StreamingContext(sc, self._batchDuration)
 
@@ -111,7 +117,11 @@ class KafkaStreaming(object):
         functions_list = list(map(lambda x: lambda list_string: x[1](list_string[x[0]]), ranked_pointer))
         function_convert = lambda x: list(map(lambda func: func(x), functions_list))
         try:
-            dstream = KafkaUtils.createStream(self._ssc, "{0}:{1}".format(self._server, self._port), self._consumer_group, {self._topic: 1})
+            dstream = KafkaUtils.createStream(
+                self._ssc,
+                "{0}:{1}".format(self._server, self._port),
+                self._consumer_group,
+                {self._topic: 1})
             self._dstream = dstream.map(lambda x: function_convert(x[1].split(",")))
         except:
             raise KafkaConnectError("Kafka error: Connection refused: server={} port={} consumer_group={} topic={}".
@@ -122,4 +132,3 @@ class KafkaStreaming(object):
             getExecutable return Executor object
         """
         return StreamingExecutor(self._dstream, self._ssc)
-

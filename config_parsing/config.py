@@ -14,19 +14,24 @@
 
 import json
 from pyspark.sql import types
+from os import path
 
 
 class Config:
     def __init__(self, path_to_config):
         self.path = path_to_config
+        path_head, _ = path.split(self.path)
+
+        # load base config
         with open(path_to_config) as cfg:
             self.content = json.load(cfg)
-        with open(self.content["input"]["data_structure"]) as cfg:
-            data_structure = json.load(cfg)
 
-        self.data_structure = data_structure
+        # load data_structure from base config
+        with open(path.join(path_head, self.content["input"]["data_structure"])) as cfg:
+            self.data_structure = json.load(cfg)
+
         data_structure_list = list(
-            map(lambda x: (x, data_structure[x]), data_structure.keys()))
+            map(lambda x: (x, self.data_structure[x]), self.data_structure.keys()))
         data_structure_sorted = sorted(
             data_structure_list, key=lambda x: x[1]["index"])
         self.data_structure_pyspark = types.StructType(

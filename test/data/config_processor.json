@@ -1,6 +1,6 @@
 {
   "input": {
-    "data_structure": "test/data/config_data_structure.json",
+    "data_structure": "config_data_structure.json",
     "input_type": "kafka",
     "options": {
       "server": "192.168.1.1",

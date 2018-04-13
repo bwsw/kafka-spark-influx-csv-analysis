@@ -12,47 +12,47 @@
     }
   },
   "outputs": [
-	{
-		"main": true,
-    		"method": "influx",
-    		"options": {
-      			"influx": {
-        			"host": "data-store",
-        			"port": 8086,
-        			"username": "root",
-        			"password": "root",
-        			"database": "sensors",
-        			"measurement": "points"
-      			}
-    		}
-  	},
-        {
-                "main": false,
-                "method": "stdout",
-                "options": {}
+    {
+      "main": true,
+      "method": "influx",
+      "options": {
+        "influx": {
+          "host": "data-store",
+          "port": 8086,
+          "username": "root",
+          "password": "root",
+          "database": "sensors",
+          "measurement": "points"
         }
+      }
+    },
+    {
+      "main": false,
+      "method": "stdout",
+      "options": {}
+    }
   ],
   "processing": {
     "transformation": [
-	"counter: one(timestamp)",
-	"sensor_id",
-	"sensor_type",
- 	"rpm_min: rotation_speed",
-	"rpm_max: rotation_speed",
-	"rpm_sum: rotation_speed",
-	"speed_lt: lt(rotation_speed, 1000)",
-	"speed_gt: gt(rotation_speed, 4000)"
+      "counter: one(timestamp)",
+      "sensor_id",
+      "sensor_type",
+      "rpm_min: rotation_speed",
+      "rpm_max: rotation_speed",
+      "rpm_sum: rotation_speed",
+      "speed_lt: lt(rotation_speed, 1000)",
+      "speed_gt: gt(rotation_speed, 4000)"
     ],
     "aggregations": {
       "operation_type": "reduceByKey",
       "rule": [
-	"key: (sensor_id, sensor_type)",
-	"max(rpm_max)",
-	"min(rpm_min)",
-	"sum(rpm_sum)",
-	"sum(speed_lt)",
-	"sum(speed_gt)",
-	"sum(counter)"
+        "key: (sensor_id, sensor_type)",
+        "max(rpm_max)",
+        "min(rpm_min)",
+        "sum(rpm_sum)",
+        "sum(speed_lt)",
+        "sum(speed_gt)",
+        "sum(counter)"
       ]
     }
   },

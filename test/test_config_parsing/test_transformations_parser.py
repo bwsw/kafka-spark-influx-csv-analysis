@@ -16,8 +16,8 @@ import os
 import unittest
 
 from errors import errors
-from config_parsing.transformations_parser import TransformationsParser, TransformationsParserConfig, SyntaxTree, \
-    FieldTransformation
+from config_parsing.transformations_parser import \
+    TransformationsParser, TransformationsParserConfig, SyntaxTree, FieldTransformation
 
 CONFIG_PATH = os.path.join(os.path.dirname(
     __file__), os.path.join("..", "data", "config.json"))
@@ -45,7 +45,8 @@ stub = {
             "type": SyntaxTree,
             "field_name": "traffic"
         }
-    ]
+    ],
+    "config": "'input.options.port'"
 }
 
 
@@ -123,13 +124,30 @@ class TransformationsParserTest(unittest.TestCase):
         self.assertIsInstance(result, SyntaxTree,
                               "Result should be instance of SyntaxTree")
         self.assertEqual(result.operation, "add", "Operation should be 'add'")
-        self.assertEqual(len(result.children), 2, "Should have 3 children")
+        self.assertEqual(len(result.children), 2, "Should have 2 children")
 
         for index in range(0, 2):
             self.assertIsInstance(result.children[index], int,
                                   "children[{}] should be instance of Leaf".format(index))
             self.assertEqual(result.children[index], stub["add"][index],
                              "Add {} argument should be {}".format(index, stub["add"][index]))
+
+    def test__parse_config_operation(self):
+        config = TransformationsParserConfig(CONFIG_PATH)
+        parser = TransformationsParser(
+            config.content["processing"]["transformation"])
+
+        expression = "config({})".format(stub["config"])
+
+        result = parser._parse(expression, True)
+
+        self.assertIsInstance(result, SyntaxTree,
+                               "Result should be instance of SyntaxTree")
+        self.assertEqual(result.operation, "config", "Operation should be 'config'")
+        self.assertEqual(len(result.children), 1, "Should have 1 children")
+
+        self.assertIsInstance(result.children[0], str,
+                                   "children[{}] should be instance of Leaf".format(0))
 
     def test__parse_nested_operations(self):
         config = TransformationsParserConfig(CONFIG_PATH)
@@ -218,7 +236,9 @@ class TransformationsParserTest(unittest.TestCase):
             config.content["processing"]["transformation"])
 
         parser.run()
+
         #self.assertEqual(len(parser.expanded_transformation), 5, 'Transformations should contain 5 elements')
+
         self.assertEqual(parser.expanded_transformation[1], 'dst_ip',
                          "2 element in expanded transformation should be 'dst_ip'")
 

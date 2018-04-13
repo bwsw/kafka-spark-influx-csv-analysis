@@ -23,6 +23,9 @@ from input.executors import Executor
 from processor.processor import Processor
 from output.output_writer import OutputWriter
 
+CONFIG = os.path.join(
+    os.path.dirname(__file__), os.path.join("..", "data", "config_dispatcher.json"))
+
 
 class DispatcherTestCase(unittest.TestCase):
     @mock.patch('analysis.analysis_factory.AnalysisFactory.__init__')
@@ -37,11 +40,19 @@ class DispatcherTestCase(unittest.TestCase):
         mock_sparksession.builder
         mock_sparksession.builder.return_value = mock_builder
         mock_analysis.return_value = None
-        config = Config(os.path.join(os.path.dirname(__file__), os.path.join("..", "data", "config_dispatcher.json")))
-        dispatcher = Dispatcher(config)
 
-        self.assertIsInstance(dispatcher.executor, Executor, "executor should has type Executor")
-        self.assertTrue(hasattr(dispatcher.executor, "set_pipeline_processing"), "executor should has set_pipeline_processing method")
+        cfg = Config(CONFIG)
+
+        dispatcher = Dispatcher(cfg, CONFIG)
+
+        self.assertIsInstance(
+            dispatcher.executor,
+            Executor,
+            "executor should has type Executor")
+        self.assertTrue(
+            hasattr(
+                dispatcher.executor, "set_pipeline_processing"),
+            "executor should has set_pipeline_processing method")
 
         self.assertIsInstance(dispatcher.processor, Processor, "processor should has type Processor")
         self.assertTrue(hasattr(dispatcher.processor, "get_pipeline_processing"),

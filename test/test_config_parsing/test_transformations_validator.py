@@ -23,6 +23,8 @@ from config_parsing.transformations_parser import FieldTransformation, SyntaxTre
 from config_parsing.transformations_validator import TransformationsValidator
 from operations.transformation_operations import TransformationOperations
 
+CONFIG_PATH = os.path.join(os.path.dirname(
+    __file__), os.path.join("..", "data", "config.json"))
 
 class TransformationsValidatorTestCase(unittest.TestCase):
     def setUp(self):
@@ -41,7 +43,7 @@ class TransformationsValidatorTestCase(unittest.TestCase):
 
     def test_validate_work_success(self):
         validator = TransformationsValidator(
-            TransformationOperations(), self.data_structure_pyspark)
+            TransformationOperations(CONFIG_PATH), self.data_structure_pyspark)
         fields = validator.validate(
             ["src_ip", "dst_ip", "packet_size", "sampling_rate"])
         self.assertEqual(fields, types.StructType([
@@ -53,7 +55,7 @@ class TransformationsValidatorTestCase(unittest.TestCase):
 
     def test_validate_raise_field_not_exists_error(self):
         validator = TransformationsValidator(
-            TransformationOperations(), self.data_structure_pyspark)
+            TransformationOperations(CONFIG_PATH), self.data_structure_pyspark)
 
         with self.assertRaises(errors.FieldNotExists):
             validator.validate(
@@ -61,7 +63,7 @@ class TransformationsValidatorTestCase(unittest.TestCase):
 
     def test_validate_rename_field(self):
         validator = TransformationsValidator(
-            TransformationOperations(), self.data_structure_pyspark)
+            TransformationOperations(CONFIG_PATH), self.data_structure_pyspark)
 
         fields = validator.validate(
             [FieldTransformation("size", "packet_size"), "dst_ip"])
@@ -73,7 +75,7 @@ class TransformationsValidatorTestCase(unittest.TestCase):
 
     def test_validate_raise_field_not_exists_when_rename_field(self):
         validator = TransformationsValidator(
-            TransformationOperations(), self.data_structure_pyspark)
+            TransformationOperations(CONFIG_PATH), self.data_structure_pyspark)
 
         with self.assertRaises(errors.FieldNotExists):
             validator.validate([FieldTransformation(
@@ -81,7 +83,7 @@ class TransformationsValidatorTestCase(unittest.TestCase):
 
     def test_validate_raise_operation_not_supported_error(self):
         validator = TransformationsValidator(
-            TransformationOperations(), self.data_structure_pyspark)
+            TransformationOperations(CONFIG_PATH), self.data_structure_pyspark)
 
         syntaxtree = SyntaxTree()
         syntaxtree.operation = "not_exists_operation"
@@ -92,7 +94,7 @@ class TransformationsValidatorTestCase(unittest.TestCase):
 
     def test_validate_correct_arguments_amount_for_operation_add(self):
         validator = TransformationsValidator(
-            TransformationOperations(), self.data_structure_pyspark)
+            TransformationOperations(CONFIG_PATH), self.data_structure_pyspark)
 
         syntaxtree = SyntaxTree()
         syntaxtree.operation = "add"
@@ -106,7 +108,7 @@ class TransformationsValidatorTestCase(unittest.TestCase):
 
     def test_validate_raise_incorrect_arguments_amount_for_operation_error(self):
         validator = TransformationsValidator(
-            TransformationOperations(), self.data_structure_pyspark)
+            TransformationOperations(CONFIG_PATH), self.data_structure_pyspark)
 
         syntaxtree = SyntaxTree()
         syntaxtree.operation = "add"
@@ -118,7 +120,7 @@ class TransformationsValidatorTestCase(unittest.TestCase):
 
     def test_validate_raise_incorrect_argument_type_for_operation_error(self):
         validator = TransformationsValidator(
-            TransformationOperations(), self.data_structure_pyspark)
+            TransformationOperations(CONFIG_PATH), self.data_structure_pyspark)
 
         syntaxtree = SyntaxTree()
         syntaxtree.operation = "mul"
@@ -130,7 +132,7 @@ class TransformationsValidatorTestCase(unittest.TestCase):
 
     def test_validate_with_correct_one_level_subtree(self):
         validator = TransformationsValidator(
-            TransformationOperations(), self.data_structure_pyspark)
+            TransformationOperations(CONFIG_PATH), self.data_structure_pyspark)
 
         syntaxtree = SyntaxTree()
         syntaxtree.operation = "mul"
@@ -146,7 +148,7 @@ class TransformationsValidatorTestCase(unittest.TestCase):
 
     def test_validate_with_correct_two_level_subtree(self):
         validator = TransformationsValidator(
-            TransformationOperations(), self.data_structure_pyspark)
+            TransformationOperations(CONFIG_PATH), self.data_structure_pyspark)
 
         syntaxtree = SyntaxTree()
         syntaxtree.operation = "add"
@@ -166,7 +168,7 @@ class TransformationsValidatorTestCase(unittest.TestCase):
 
     def test_validate_raise_operation_not_supported_error_for_subtree(self):
         validator = TransformationsValidator(
-            TransformationOperations(), self.data_structure_pyspark)
+            TransformationOperations(CONFIG_PATH), self.data_structure_pyspark)
 
         syntaxtree = SyntaxTree()
         syntaxtree.operation = "not_exists_operator"
@@ -182,7 +184,7 @@ class TransformationsValidatorTestCase(unittest.TestCase):
 
     def test_validate_function_with_different_arguments_type(self):
         validator = TransformationsValidator(
-            TransformationOperations(), self.data_structure_pyspark)
+            TransformationOperations(CONFIG_PATH), self.data_structure_pyspark)
 
         tree = SyntaxTree()
         tree.operation = "truncate"
@@ -196,7 +198,7 @@ class TransformationsValidatorTestCase(unittest.TestCase):
 
     def test_validate_raise_error_for_function_with_different_arguments_type(self):
         validator = TransformationsValidator(
-            TransformationOperations(), self.data_structure_pyspark)
+            TransformationOperations(CONFIG_PATH), self.data_structure_pyspark)
 
         main_syntax_tree = SyntaxTree()
         main_syntax_tree.operation = "truncate"
@@ -208,7 +210,7 @@ class TransformationsValidatorTestCase(unittest.TestCase):
 
     def test_validate_with_transformation_primitives(self):
         validator = TransformationsValidator(
-            TransformationOperations(),
+            TransformationOperations(CONFIG_PATH),
             self.data_structure_pyspark)
         # test "{foo: 'bar'}""
         tree = SyntaxTree()
@@ -251,4 +253,23 @@ class TransformationsValidatorTestCase(unittest.TestCase):
 
         self.assertEqual(fields, types.StructType([
             types.StructField("foo", types.StringType())
+        ]))
+
+    def test_validate_config_operation(self):
+        validator = TransformationsValidator(
+            TransformationOperations(CONFIG_PATH), self.data_structure_pyspark)
+
+        syntaxtree = SyntaxTree()
+        syntaxtree.operation = "config"
+        syntaxtree.children = ["'input.options.port'"]
+
+        main_syntax_tree = SyntaxTree()
+        main_syntax_tree.operation = "concat"
+        main_syntax_tree.children = [syntaxtree, "'sampling_rate'"]
+
+        fields = validator.validate(
+            [FieldTransformation("result", main_syntax_tree)])
+
+        self.assertEqual(fields, types.StructType([
+            types.StructField('result', types.StringType())
         ]))
