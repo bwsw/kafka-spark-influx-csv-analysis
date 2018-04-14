@@ -202,16 +202,16 @@ This section specifies transformations and aggregations to be performed on the i
    - rename field: "new_name: original_name";
    - use constants (integer, long, double, boolean, string) as values: new_name: 13;
    - use following functions defined:
-      - add(arg1, arg2), e.g. new_name: add(original_name, 1)
-      - sub(arg1, arg2)
-      - mul(arg1, arg2)
-      - math division (double result): mathdiv(arg1, arg2)
-      - division with python behaviour: pydiv(arg1, arg2)
-      - returns single value from config: config('path.in.config') 
-      - boolean operations with python behaviour: lt(arg1, arg2), le, gt, ge, eq, neq, or, and, not
-      - concat(arg1, arg2)
-      - truncate(argstring, num) 
-      - casting operations: long(arg1), int, float, double, boolean 
+      - ```add(arg1, arg2)```, e.g. new_name: add(original_name, 1)
+      - ```sub(arg1, arg2)```
+      - ```mul(arg1, arg2)```
+      - math division (double result): ```mathdiv(arg1, arg2)```
+      - division with python behaviour: ```pydiv(arg1, arg2)```
+      - returns single value from config: ```config('path.in.config')```
+      - boolean operations with python behaviour: ```lt(arg1, arg2), le, gt, ge, eq, neq, or, and, not```
+      - ```concat(arg1, arg2)```
+      - ```truncate(argstring, num)```
+      - casting operations: ```long(arg1), int, float, double, boolean```
 
    Additional functions can be defined in ```./operations/transformation_operations.py```
 
