@@ -142,7 +142,7 @@ To run the application, you will need a configuration file. It is a json file wi
   }
 }
 ```
-File has 5 sections: 4 of them are mandatory (input, output, processing, databases) and 1 is optional (analysis). Sections are described in more detail below (all fields are mandatory).
+File has 5 sections: 4 of them are mandatory (input, outputs, processing, databases) and 1 is optional (analysis). Sections are described in more detail below (all fields are mandatory).
 
 ### Input Section
 This section describes how the application will receive data.
@@ -157,17 +157,42 @@ This section describes how the application will receive data.
     * "batchDuration" - data sampling window in seconds
     * "sep" - fields delimiter for received string
 
-### Output Section
-This section describes how the application will output data.
+### Outputs Section
+This section describes how the application will output aggregate data to external systems. The section consisits of array of objects. Every object is a separate output definition. The output, which will be used for historical lookup should be marked as "main": true.
 
-* "method" - data output type, valid values: "csv", "influx"
-* "options" > influx":
-    * "host" - influxdb hostname
-    * "port": influxdb port
-    * "username": influxdb user
-    * "password": password for user above
-    * "database": influxdb database name
-    * "measurement": measurement name
+```json
+	...
+	"outputs": [ {...}, {...}, ... ],
+	...
+```
+
+#### Stdout Output 
+
+```json
+{
+	"method": "stdout",
+	"options": {}
+}
+```
+
+#### InfluxDB Output
+
+```json
+{
+	"main": true,
+	"method": "influx",
+	"options": {
+		"influx": {
+			"host": "influxdb",
+			"port": 8086,
+			"username": "root",
+			"password": "root",
+			"database": "sensors",
+			"measurement": "points"
+		}
+	}
+}
+```
 
 ### Processing Section
 This section specifies transformations and aggregations to be performed on the input data.
