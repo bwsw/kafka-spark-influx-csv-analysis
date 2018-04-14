@@ -88,60 +88,61 @@ To run the application, you will need a configuration file. It is a json file wi
 
 ```json
 {
-  "input": {
-    "input_type": "kafka",
-    "data_structure": "config_data_structure.json",
-    "options": {
-      "server": "zookeeper",
-      "port": 32181,
-      "consumer_group": "data-consumer",
-      "topic": "sensors-demo",
-      "batchDuration": 10,
-      "sep": ","
-    }
-  },
-  "outputs": [{
-    "main": true,
-    "method": "influx",
-    "options": {
-      "influx": {
-        "host": "influxdb",
-        "port": 8086,
-        "username": "root",
-        "password": "root",
-        "database": "sensors",
-        "measurement": "points"
-      }
-    }
-  }],
-  "processing": {
-    "transformation": [
-    "counter: one(timestamp)",
-    "sensor_id",
-    "sensor_type",
-    "rpm_min: rotation_speed",
-    "rpm_max: rotation_speed",
-    "rpm_sum: rotation_speed",
-    "speed_lt: lt(rotation_speed, 1000)",
-    "speed_gt: gt(rotation_speed, 4000)"
-    ],
-    "aggregations": {
-      "operation_type": "reduceByKey",
-      "rule": [
-    "key: (sensor_id, sensor_type)",
-    "max(rpm_max)",
-    "min(rpm_min)",
-    "sum(rpm_sum)",
-    "sum(speed_lt)",
-    "sum(speed_gt)",
-    "sum(counter)"
-      ]
-    }
-  },
-  "databases": {
-  }
+	"input": {
+		"input_type": "kafka",
+		"data_structure": "config_data_structure.json",
+		"options": {
+			"server": "zookeeper",
+			"port": 32181,
+			"consumer_group": "data-consumer",
+			"topic": "sensors-demo",
+			"batchDuration": 10,
+			"sep": ","
+		}
+	},
+	"outputs": [{
+		"main": true,
+		"method": "influx",
+		"options": {
+			"influx": {
+				"host": "influxdb",
+				"port": 8086,
+				"username": "root",
+				"password": "root",
+				"database": "sensors",
+				"measurement": "points"
+			}
+		}
+	}],
+	"processing": {
+		"transformation": [
+			"counter: one(timestamp)",
+			"sensor_id",
+			"sensor_type",
+			"rpm_min: rotation_speed",
+			"rpm_max: rotation_speed",
+			"rpm_sum: rotation_speed",
+			"speed_lt: lt(rotation_speed, 1000)",
+			"speed_gt: gt(rotation_speed, 4000)"
+		],
+		"aggregations": {
+			"operation_type": "reduceByKey",
+			"rule": [
+				"key: (sensor_id, sensor_type)",
+				"max(rpm_max)",
+				"min(rpm_min)",
+				"sum(rpm_sum)",
+				"sum(speed_lt)",
+				"sum(speed_gt)",
+				"sum(counter)"
+			]
+		}
+	},
+	"databases": {
+	}
 }
 ```
+
 File has 5 sections: 4 of them are mandatory (input, outputs, processing, databases) and 1 is optional (analysis). Sections are described in more detail below (all fields are mandatory).
 
 ### Input Section
