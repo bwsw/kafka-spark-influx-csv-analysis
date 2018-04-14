@@ -198,10 +198,22 @@ This section describes how the application will output aggregate data to externa
 ### Processing Section
 This section specifies transformations and aggregations to be performed on the input data.
 
-* "transformation" - this array of strings specifies transformation steps for every string received from the input source.
+* "transformation" - this section defines per-row transformations which enrich the row data and generate new fields. An user can use following operations:
+   - rename field: "new_name: original_name";
+   - use constants (integer, long, double, boolean, string) as values: new_name: 13;
+   - use following functions defined:
+      - add(arg1, arg2), e.g. new_name: add(original_name, 1)
+      - sub(arg1, arg2)
+      - mul(arg1, arg2)
+      - math division (double result): mathdiv(arg1, arg2)
+      - division with python behaviour: pydiv(arg1, arg2)
+      - returns single value from config: config('path.in.config') 
+      - boolean operations with python behaviour: lt(arg1, arg2), le, gt, ge, eq, neq, or, and, not
+      - concat(arg1, arg2)
+      - truncate(argstring, num) 
+      - casting operations: long(arg1), int, float, double, boolean 
 
-   User can rename the field (new_name: old_name), apply one of defined functions: 
-   sum, div, mul, sub, etc or just use the field unchanged.
+   Additional functions can be defined in ```./operations/transformation_operations.py```
 
    Each field declared in the transformation section should be subsequently used in aggregation, otherwise the application will raise exception.
    
