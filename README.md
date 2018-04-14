@@ -88,61 +88,62 @@ To run the application, you will need a configuration file. It is a json file wi
 
 ```json
 {
-  "input": {
-    "input_type": "kafka",
-    "data_structure": "config_data_structure.json",
-    "options": {
-      "server": "zookeeper",
-      "port": 32181,
-      "consumer_group": "data-consumer",
-      "topic": "sensors-demo",
-      "batchDuration": 10,
-      "sep": ","
-    }
-  },
-  "outputs": [{
-    "main": true,
-    "method": "influx",
-    "options": {
-      "influx": {
-        "host": "influxdb",
-        "port": 8086,
-        "username": "root",
-        "password": "root",
-        "database": "sensors",
-        "measurement": "points"
-      }
-    }
-  }],
-  "processing": {
-    "transformation": [
-    "counter: one(timestamp)",
-    "sensor_id",
-    "sensor_type",
-    "rpm_min: rotation_speed",
-    "rpm_max: rotation_speed",
-    "rpm_sum: rotation_speed",
-    "speed_lt: lt(rotation_speed, 1000)",
-    "speed_gt: gt(rotation_speed, 4000)"
-    ],
-    "aggregations": {
-      "operation_type": "reduceByKey",
-      "rule": [
-    "key: (sensor_id, sensor_type)",
-    "max(rpm_max)",
-    "min(rpm_min)",
-    "sum(rpm_sum)",
-    "sum(speed_lt)",
-    "sum(speed_gt)",
-    "sum(counter)"
-      ]
-    }
-  },
-  "databases": {
-  }
+	"input": {
+		"input_type": "kafka",
+		"data_structure": "config_data_structure.json",
+		"options": {
+			"server": "zookeeper",
+			"port": 32181,
+			"consumer_group": "data-consumer",
+			"topic": "sensors-demo",
+			"batchDuration": 10,
+			"sep": ","
+		}
+	},
+	"outputs": [{
+		"main": true,
+		"method": "influx",
+		"options": {
+			"influx": {
+				"host": "influxdb",
+				"port": 8086,
+				"username": "root",
+				"password": "root",
+				"database": "sensors",
+				"measurement": "points"
+			}
+		}
+	}],
+	"processing": {
+		"transformation": [
+			"counter: one(timestamp)",
+			"sensor_id",
+			"sensor_type",
+			"rpm_min: rotation_speed",
+			"rpm_max: rotation_speed",
+			"rpm_sum: rotation_speed",
+			"speed_lt: lt(rotation_speed, 1000)",
+			"speed_gt: gt(rotation_speed, 4000)"
+		],
+		"aggregations": {
+			"operation_type": "reduceByKey",
+			"rule": [
+				"key: (sensor_id, sensor_type)",
+				"max(rpm_max)",
+				"min(rpm_min)",
+				"sum(rpm_sum)",
+				"sum(speed_lt)",
+				"sum(speed_gt)",
+				"sum(counter)"
+			]
+		}
+	},
+	"databases": {
+	}
 }
 ```
-File has 5 sections: 4 of them are mandatory (input, output, processing, databases) and 1 is optional (analysis). Sections are described in more detail below (all fields are mandatory).
+
+File has 5 sections: 4 of them are mandatory (input, outputs, processing, databases) and 1 is optional (analysis). Sections are described in more detail below (all fields are mandatory).
 
 ### Input Section
 This section describes how the application will receive data.
@@ -157,25 +158,62 @@ This section describes how the application will receive data.
     * "batchDuration" - data sampling window in seconds
     * "sep" - fields delimiter for received string
 
-### Output Section
-This section describes how the application will output data.
+### Outputs Section
+This section describes how the application will output aggregate data to external systems. The section consisits of array of objects. Every object is a separate output definition. The output, which will be used for historical lookup should be marked as "main": true.
 
-* "method" - data output type, valid values: "csv", "influx"
-* "options" > influx":
-    * "host" - influxdb hostname
-    * "port": influxdb port
-    * "username": influxdb user
-    * "password": password for user above
-    * "database": influxdb database name
-    * "measurement": measurement name
+```json
+	...
+	"outputs": [ {...}, {...}, ... ],
+	...
+```
+
+#### Stdout Output 
+
+```json
+{
+	"method": "stdout",
+	"options": {}
+}
+```
+
+#### InfluxDB Output
+
+```json
+{
+	"main": true,
+	"method": "influx",
+	"options": {
+		"influx": {
+			"host": "influxdb",
+			"port": 8086,
+			"username": "root",
+			"password": "root",
+			"database": "sensors",
+			"measurement": "points"
+		}
+	}
+}
+```
 
 ### Processing Section
 This section specifies transformations and aggregations to be performed on the input data.
 
-* "transformation" - this array of strings specifies transformation steps for every string received from the input source.
+* "transformation" - this section defines per-row transformations which enrich the row data and generate new fields. An user can use following operations:
+   - rename field: "new_name: original_name";
+   - use constants (integer, long, double, boolean, string) as values: new_name: 13;
+   - use following functions defined:
+      - ```add(arg1, arg2)```, e.g. new_name: add(original_name, 1)
+      - ```sub(arg1, arg2)```
+      - ```mul(arg1, arg2)```
+      - math division (double result): ```mathdiv(arg1, arg2)```
+      - division with python behaviour: ```pydiv(arg1, arg2)```
+      - returns single value from config: ```config('path.in.config')```
+      - boolean operations with python behaviour: ```lt(arg1, arg2), le, gt, ge, eq, neq, or, and, not```
+      - ```concat(arg1, arg2)```
+      - ```truncate(argstring, num)```
+      - casting operations: ```long(arg1), int, float, double, boolean```
 
-   User can rename the field (new_name: old_name), apply one of defined functions: 
-   sum, div, mul, sub, etc or just use the field unchanged.
+   Additional functions can be defined in ```./operations/transformation_operations.py```
 
    Each field declared in the transformation section should be subsequently used in aggregation, otherwise the application will raise exception.
    
