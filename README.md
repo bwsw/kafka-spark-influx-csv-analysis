@@ -232,7 +232,7 @@ Next aggregation functions are currently defined:
    - max(field)
    - min(field)
    
-Argument for the function is a field defined in the transformation step. No expressions allowed.
+Argument for the function is a field defined in the transformation step. No expressions allowed. Additional functions may be specified in the ```./operations/aggregation_operations.py```, but keep in mind - only monoid operations are supported, so e.g. one is unable to implement ```mean``` because it's not a monoid and average as well. 
 
 ### Databases Section
 This section specifies paths to databases which are necessary for the udf functions to work.
