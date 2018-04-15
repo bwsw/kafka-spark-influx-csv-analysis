@@ -198,7 +198,8 @@ This section describes how the application will output aggregate data to externa
 ### Processing Section
 This section specifies transformations and aggregations to be performed on the input data.
 
-* "transformation" - this section defines per-row transformations which enrich the row data and generate new fields. An user can use following operations:
+#### Transformation
+The section defines per-row transformations which enrich the row data and generate new fields. An user can use following operations:
    - rename field: "new_name: original_name";
    - use constants (integer, long, double, boolean, string) as values: new_name: 13;
    - use following functions defined:
@@ -213,17 +214,25 @@ This section specifies transformations and aggregations to be performed on the i
       - ```truncate(argstring, num)```
       - casting operations: ```long(arg1), int, float, double, boolean```
 
-   Additional functions can be defined in ```./operations/transformation_operations.py```
+Custom functions should be defined in ```./operations/transformation_operations.py```
 
-   Each field declared in the transformation section should be subsequently used in aggregation, otherwise the application will raise exception.
+Each field declared in the transformation section should be subsequently used in aggregation, 
+otherwise the application will raise exception.
    
-* aggregation - this section specifies how the data should be aggregated after transformation.
+#### Aggregation
+The section specifies how the data are aggregated after transformation. 
     
-  Field "operation_type" specifies aggregation type, valid values are "reduce" and "reduceByKey". In case of "reduceByKey" user needs to specify an aggregation key (key = src_country).
+Field "operation_type" specifies aggregation type, valid values are "reduce" and "reduceByKey". In case of "reduceByKey" an user must specify an aggregation key in the form:
+
+```"key: <field>|(<field>,...)"```, so the key can contain more than one field which are used for "group by" operation.
   
-  The key can contain more than one field (key = (src_ip, dst_country, src_port_or_icmp_type)).
-  
-  User can specify one of defined aggregation functions: sum, mul, max, min.
+Next aggregation functions are currently defined:
+   - sum(field)
+   - mul(field)
+   - max(field)
+   - min(field)
+   
+Argument for the function is a field defined in the transformation step. No expressions allowed.
 
 ### Databases Section
 This section specifies paths to databases which are necessary for the udf functions to work.
