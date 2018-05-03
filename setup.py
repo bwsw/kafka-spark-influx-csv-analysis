@@ -22,6 +22,8 @@ setup(
     install_requires=[
         "influxdb==4.0.0",
         "kafka==1.3.3",
-        "nanotime==0.5.2", 'pyspark'
+        "nanotime==0.5.2",
+        'pyspark',
+        "numpy==1.14.3"
     ],
 )

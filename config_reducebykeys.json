@@ -17,7 +17,7 @@
       "method": "influx",
       "options": {
         "influx": {
-          "host": "data-store",
+          "host": "influxdb",
           "port": 8086,
           "username": "root",
           "password": "root",
