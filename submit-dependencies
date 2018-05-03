@@ -1,7 +1,5 @@
 kafka		https://pypi.python.org/packages/3a/40/50dec31d2e6dbb6dd31104b02fe4141e0f3e1b26f0e66ebf609284b6c94f/kafka-1.3.3.tar.gz
 influx		https://pypi.python.org/packages/82/71/5026237edb11b01b717d74fdd8023177257731276a954cd05f825795cb60/influxdb-4.1.0.tar.gz
 nanotime	https://pypi.python.org/packages/d5/54/6d5924f59cf671326e7809f4b3f70fa8df535d67e952ad0b6fea02f52faf/nanotime-0.5.2.tar.gz
-geoip2		https://pypi.python.org/packages/4a/de/0502344a1ddcda501c1498607e0f5eb036ee1159419d9e08d269b0f23ada/geoip2-2.5.0.tar.gz
-maxminddb	https://pypi.python.org/packages/f8/7a/bac498d2b7491dd8b837dff8831a7e7628db72c4b840b54743961a8f0454/maxminddb-1.3.0.tar.gz
 pytz		https://pypi.python.org/packages/a4/09/c47e57fc9c7062b4e83b075d418800d322caa87ec0ac21e6308bd3a2d519/pytz-2017.2.zip
 dateutil	https://pypi.python.org/packages/5b/11/246237ce2a1dd87ffebef0e430033f877b31dd208b281914d4fd3c531ee7/dateutils-0.6.6.tar.gz

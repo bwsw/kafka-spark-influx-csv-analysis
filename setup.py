@@ -15,7 +15,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="ts-processing-framework",
+    name="ts_processing_framework",
     version="1.0.0",
     packages=find_packages(),
     author='Bitworks',

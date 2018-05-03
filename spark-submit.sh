@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set -e
+
 export PYTHONHASHSEED=0
 APP_ARGS=$*
 echo "args = $APP_ARGS"
@@ -24,13 +26,13 @@ REPACK=false
 
 while [[ $# -gt 0 ]]
 do
-key="$1"
-case $key in
+PARAM="$1"
+case $PARAM in
     --master)
     MASTER="$2"
     shift
     ;;
-    --dependencies)
+    --dependencies-dir)
     DEPS_DIR="$2"
     shift
     ;;
@@ -38,17 +40,32 @@ case $key in
     REPACK="$2"
     shift
     ;;
+    --processing-config)
+    PROCESSING_CONFIG="$2"
+    shift
+    ;;
+    --data-config)
+    DATA_CONFIG="$2"
+    shift
+    ;;
     --help)
-    echo "example: ./spark-submit.sh --master spark://192.168.1.1:7077 --dependencies tmp main.py $(pwd)/config.json"
-    echo "set --repack true if you want repack existing packages"
+    echo "example: ./spark-submit.sh "
+    echo "               --master spark://192.168.1.1:7077"
+    echo "               --dependencies-dir tmp"
+    echo "               --data-config $(pwd)/config_data_structure.json"
+    echo "               --processing-config $(pwd)/config_reducebykeys.json"
+    echo "               [--repack true] #if you want repack existing packages"
+    echo "               main.py"
     exit
     ;;
     *)
-    APP_ARGS+=$key" "       # unknown option
+    APP_ARGS="$APP_ARGS $PARAM"       # unknown option
     ;;
 esac
 shift 
 done
+
+APP_ARGS="$APP_ARGS $PROCESSING_CONFIG"
 
 if [ -z ${DEPS_DIR} ]
 then
@@ -72,13 +89,15 @@ fi
 
 if [[ ! -d 'dist' ]] || [[ $REPACK == 'true' ]]
 then
-    python setup.py bdist_egg
-    name_egg_app=$(cat setup.py | grep name | sed -e 's/\(^.*\"\)\(.*\)\(\".*$\)/\2/') #'
+    echo "Preparing software package"
+    python3 setup.py bdist_egg
+    name_egg_app=$(cat setup.py | grep name | sed -e 's/\(^.*\"\)\(.*\)\(\".*$\)/\2/')
     echo "name_egg_app=$name_egg_app"
     egg_name=$(find dist -name "$name_egg_app*" -print0 | xargs -0 ls)
     echo "egg_name=$egg_name"
     cp $egg_name $DEPS_DIR
 fi
+
 
 DEPS_LIST=()
 
@@ -86,6 +105,7 @@ cd $TMP_DIR
 
 while read description url
 do
+    echo "Downloading remote dependencies"
     file_name=$(echo ${url} | sed -e 's/\(^.*\/\)\(.*\)/\2/') #'
     DEPS_LIST+=($file_name)
     if [ -f $TMP_DIR/$file_name ]; then
@@ -95,6 +115,7 @@ do
     fi
 done < $BASE_DIR/submit-dependencies
 
+echo "Packing dependencies"
 for file in "${DEPS_LIST[@]}"
 do
     if [[ $file == *"zip"* ]]; then
@@ -108,7 +129,7 @@ do
     then
         cd $base_name
         echo "base_name=$base_name"
-        python setup.py bdist_egg
+        python3 setup.py bdist_egg
         egg_name=$(find dist -name "$base_name*" -print0 | xargs -0 ls)
         echo "egg_name=$egg_name"
         cp $egg_name $DEPS_DIR
@@ -128,13 +149,7 @@ done
 DEPS=${DEPS:1}
 
 
-CONFIGS=""
-for f in $(ls conf*json)
-do
-    CONFIGS="$CONFIGS,$f"
-done
-
-DEPS=$(sed 's/,//' <<< "${DEPS},${CONFIGS:1}")
+DEPS=$(sed 's/,//' <<< "${DEPS},$DATA_CONFIG,$PROCESSING_CONFIG")
 
 CMD="spark-submit --deploy-mode client --packages org.apache.spark:spark-streaming-kafka-0-8_2.11:2.1.0 --py-files $DEPS"
 
