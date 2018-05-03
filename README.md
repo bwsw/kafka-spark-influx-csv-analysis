@@ -47,28 +47,31 @@ To download necessary docker images, run the following commands:
 * Create an overlay network: 
 	
 	```bash
-	docker network create --driver overlay --attachable=true network-name
+	export NETWORK=ts-engine
+	docker network create --driver overlay --attachable=true $NETWORK
 	```
 * Run Zookeeper: 
 
 	```bash
-	docker service create --name=zookeeper --mount type=bind,source=/path/to/folder,destination=/var/lib/zookeeper/data \
-		-e ZOOKEEPER_CLIENT_PORT=32181 -e ZOOKEEPER_TICK_TIME=2000 --network=network-name confluentinc/cp-zookeeper:3.0.0
+	mkdir -p $(pwd)/dev/zookeeper/data
+	docker service create --name=zookeeper --mount type=bind,source=$(pwd)/dev/zookeeper/data,destination=/var/lib/zookeeper/data \
+		-e ZOOKEEPER_CLIENT_PORT=32181 -e ZOOKEEPER_TICK_TIME=2000 --network=$NETWORK confluentinc/cp-zookeeper:3.0.0
 	```
 
 * Run Kafka: 
 	
 	```bash
-	docker service create --name=kafka --mount type=bind,source=/path/to/folder,destination=/var/lib/kafka/data \
+	mkdir -p $(pwd)/dev/kafka/data
+	docker service create --name=kafka --mount type=bind,source=$(pwd)/dev/kafka/data,destination=/var/lib/kafka/data \
 		-e KAFKA_ZOOKEEPER_CONNECT=zookeeper:32181 -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:29092 \
-		--network=network-name confluentinc/cp-kafka:3.0.0
+		--network=$NETWORK confluentinc/cp-kafka:3.0.0
 	```
 
 * Run Grafana: 
 	
 	```bash
 	docker service create --name=view -p 3000:3000 --env GF_SECURITY_ADMIN_PASSWORD=your_password \
-		--network=network-name grafana/grafana
+		--network=$NETWORK grafana/grafana
 	```
     
         login: admin, password: your_password
@@ -76,8 +79,9 @@ To download necessary docker images, run the following commands:
 * Run InfluxDB: 
 	
 	```bash
-	docker service create --name=influxdb --mount type=bind,source=/path/to/folder,destination=/var/lib/influxdb \
-		--network=network-name influxdb
+	mkdir -p $(pwd)/dev/influx/data
+	docker service create --name=influxdb --mount type=bind,source=$(pwd)/dev/influx/data,destination=/var/lib/influxdb \
+		--network=$NETWORK influxdb
 	```
     
         login: root, password: root
@@ -282,23 +286,21 @@ docker build -t processor-app .
 Create kafka topic: 
 
 ```bash
-docker run --network=network-name --rm confluentinc/cp-kafka:3.0.0 kafka-topics --create \
+docker run --network=$NETWORK --rm confluentinc/cp-kafka:3.0.0 kafka-topics --create \
 	--topic sensors-demo --partitions 1 --replication-factor 1 --if-not-exists --zookeeper zookeeper:32181
 ```
 
 Run the application: 
 
 ```bash
-
 docker service create --name=app --mount type=bind,source=$(pwd),destination=/configs \
-	--network=network-name processor-app /configs/config_reducebykeys.json
+	--network=$NETWORK processor-app /configs/config_reducebykeys.json
 ```
 
 Run sample data generator: 
 
 ```bash
-
-python3 generator.py | docker run --network=network-name -i --rm confluentinc/cp-kafka:3.0.0 kafka-console-producer \
+python3 generator.py | docker run --network=$NETWORK -i --rm confluentinc/cp-kafka:3.0.0 kafka-console-producer \
 	--broker-list kafka:29092 --topic sensors-demo
 ```
 
@@ -306,6 +308,6 @@ python3 generator.py | docker run --network=network-name -i --rm confluentinc/cp
 
 You may need to drop series from influx or recreate new structure for data after changing configuration, use influxdb console for doing that.
 
-```
-docker run -it --rm --network=networks-name influxdb influx -host influxdb
+```bash
+docker run -it --rm --network=$NETWORK influxdb influx -host influxdb
 ```
